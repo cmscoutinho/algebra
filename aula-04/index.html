@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratório de Sistemas Lineares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Layout: caderno de álgebra. Teoria curta no topo; depois a bancada (montar ou sortear o sistema), o palco das resoluções passo a passo e o teste final. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E8ECF1; --ink:#14202B; --muted:#596775; --line:#D2D9E1;
+  --piv:#B86E00; --zero:#12805A; --op:#2F55C8; --sub:#AD2F78; --bad:#C3352B;
+  --f-display:"Syne","Arial Black",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440;
+    --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440;
+  --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+:focus-visible{outline:2px solid var(--op);outline-offset:2px}
+.k-piv{color:var(--piv);font-weight:600} .k-zero{color:var(--zero);font-weight:600} .k-op{color:var(--op);font-weight:600} .k-sub{color:var(--sub);font-weight:600} .k-bad{color:var(--bad);font-weight:600}
+
+/* ---------- Notação matemática ---------- */
+.m{font-family:var(--f-math);font-size:1.22rem;line-height:1.5}
+.m i,i.v{font-family:var(--f-math);font-style:italic}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.78em;line-height:1.08;margin:0 .08em}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .18em}
+.sys{display:inline-grid;grid-template-columns:auto 1fr;align-items:stretch;gap:0 6px}
+.sys .brace{border-left:2px solid currentColor;border-radius:10px 0 0 10px;width:10px;margin-block:4px}
+.sys .eqs{display:grid;gap:2px}
+.eqrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.eqrow .tag{font:600 .7rem var(--f-mono);color:var(--muted);min-width:22px}
+.t{border-radius:5px;padding:0 2px;transition:background .3s}
+.t.hl{background:color-mix(in srgb,var(--sub) 20%,transparent);color:var(--sub);box-shadow:0 0 0 1.5px var(--sub)}
+.t.mv{background:color-mix(in srgb,var(--op) 18%,transparent);color:var(--op);box-shadow:0 0 0 1.5px var(--op)}
+.t.ok{background:color-mix(in srgb,var(--zero) 18%,transparent);color:var(--zero)}
+.box{display:inline-block;border:1.6px solid currentColor;border-radius:6px;padding:0 8px}
+.eqrow.dim{opacity:.4}
+
+/* ---------- Cabeçalho ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2.2rem,5.6vw,4.2rem);line-height:.98;letter-spacing:-.02em}
+h1 span{color:var(--op)}
+.lead{font-size:1.08rem;max-width:58ch;margin-top:18px}
+.hero-sys{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;display:grid;gap:10px;justify-items:start}
+.hero-sys .m{font-size:1.5rem}
+.hero-sys small{color:var(--muted);font-size:.86rem}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px}
+nav.toc a{font-family:var(--f-mono);font-size:.76rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+
+/* ---------- Seções ---------- */
+section{padding-block:clamp(32px,5vw,56px);border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:8px;margin-bottom:24px;max-width:74ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.45rem,3vw,2.15rem);line-height:1.1;letter-spacing:-.01em}
+.sec-head p{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font:700 1.02rem var(--f-display)}
+.lbl{font-family:var(--f-mono);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hint{font-size:.88rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+
+/* ---------- Controles ---------- */
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.9rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--op);border-color:var(--op)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--sunk)}
+.seg button{font-size:.86rem;font-weight:600;padding:5px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+.seg button[disabled]{opacity:.4;cursor:not-allowed}
+select,input[type=text],textarea{font:inherit;font-size:.92rem;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+textarea{width:100%;font-family:var(--f-mono);font-size:.95rem;line-height:1.6;resize:vertical}
+.bad-input{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 10%,var(--surface))!important}
+.msg{font-size:.9rem;padding:8px 12px;border-radius:8px;background:var(--sunk)}
+.msg.ok{background:color-mix(in srgb,var(--zero) 13%,transparent)} .msg.ok b{color:var(--zero)}
+.msg.bad{background:color-mix(in srgb,var(--bad) 11%,transparent)} .msg.bad b{color:var(--bad)}
+.chip{font:600 .76rem var(--f-mono);padding:4px 10px;border-radius:999px;border:1.5px solid currentColor}
+.chip.spd{color:var(--zero)} .chip.spi{color:var(--piv)} .chip.si{color:var(--bad)}
+
+/* ---------- Teoria ---------- */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:14px}
+.theory .card p{font-size:.94rem}
+.theory .m{font-size:1.12rem}
+.ops-list{margin:0;padding-left:1.1em;font-size:.93rem;display:grid;gap:4px}
+.mini-plots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:.78rem}
+.mini-plots svg{width:100%;height:auto;background:var(--sunk);border-radius:6px}
+.mini-plots b{display:block;font-family:var(--f-mono);font-size:.74rem}
+
+/* ---------- Bancada ---------- */
+.bench{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.grid-in{display:grid;gap:6px;align-items:center;overflow-x:auto;padding-bottom:4px}
+.grid-in input{width:64px;text-align:center;font-family:var(--f-math);font-size:1.05rem;padding:6px 4px}
+.grid-in .op{font-family:var(--f-math);font-size:1.1rem;text-align:center}
+.grid-in .op i{font-style:italic}
+.preview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
+.plot svg{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.plot .ax{stroke:var(--muted);stroke-width:1.2}
+.plot .gr{stroke:var(--line);stroke-width:.8}
+.plot .l1{stroke:var(--op);stroke-width:2.6} .plot .l2{stroke:var(--sub);stroke-width:2.6;stroke-dasharray:9 5}
+.plot .pt{fill:var(--piv)} .plot text{font:600 12px var(--f-mono);fill:var(--ink)}
+.plot .tk{font:11px var(--f-mono);fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.86rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sw{width:20px;height:3px;display:inline-block;border-radius:2px;flex:none}
+
+/* ---------- Matrizes ---------- */
+.mat{border-collapse:separate;border-spacing:0;font-family:var(--f-math);font-size:1.12rem;position:relative}
+.mat td,.mat th{min-width:46px;height:40px;text-align:center;padding:2px 8px;font-variant-numeric:tabular-nums}
+.mat th{font-size:.9rem;color:var(--muted);font-weight:400;height:26px}
+.mat th i{font-style:italic}
+.mat td.sep,.mat th.sep{border-left:1.6px solid var(--muted)}
+.mat td.rl{font:600 .7rem var(--f-mono);color:var(--muted);min-width:28px;padding-right:2px}
+.matwrap{display:inline-block;position:relative;padding:0 10px}
+.matwrap::before,.matwrap::after{content:"";position:absolute;top:26px;bottom:0;width:8px;border:2px solid currentColor}
+.matwrap.nohead::before,.matwrap.nohead::after{top:0}
+.matwrap::before{left:0;border-right:0;border-radius:6px 0 0 6px}
+.matwrap::after{right:0;border-left:0;border-radius:0 6px 6px 0}
+.mat td.below{background:color-mix(in srgb,var(--bad) 7%,transparent)}
+.mat td.below.zero{background:color-mix(in srgb,var(--zero) 16%,transparent);color:var(--zero)}
+.mat td.piv{box-shadow:inset 0 0 0 2px var(--piv);border-radius:8px;color:var(--piv);font-weight:600}
+.mat tr.target td:not(.rl){background:color-mix(in srgb,var(--op) 9%,transparent)}
+.mat tr.src td.piv{background:color-mix(in srgb,var(--piv) 12%,transparent)}
+.opchip{display:inline-flex;align-items:center;gap:6px;font:600 .95rem var(--f-math);color:#fff;background:var(--op);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.opchip i{font-style:italic}
+.opstack{display:grid;gap:6px;justify-items:center}
+.arrow{font-size:1.6rem;color:var(--op);line-height:1}
+.mpair{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center}
+.calc{border-collapse:collapse;font-family:var(--f-math);font-size:1rem}
+.calc td{padding:2px 8px;text-align:center;min-width:40px}
+.calc td.lab{font:600 .72rem var(--f-mono);color:var(--muted);text-align:right}
+.calc tr.sum td{border-top:1.6px solid var(--ink)}
+.calc tr.sum td.lab{border-top:0}
+
+/* ---------- Palco ---------- */
+.player{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+.pstage{min-height:300px;padding:18px;border-radius:10px;background:var(--sunk);overflow-x:auto;display:flex;flex-direction:column;gap:14px;justify-content:center;align-items:center}
+.pstage>*{max-width:100%}
+.pstage .m{font-size:1.32rem}
+.pnote{font-size:.98rem;padding:10px 12px;border-left:3px solid var(--op);background:color-mix(in srgb,var(--op) 7%,transparent);border-radius:0 8px 8px 0;min-height:3.2em}
+.ptitle{font:700 1.2rem var(--f-display)}
+.pcount{font:600 .76rem var(--f-mono);color:var(--muted)}
+.progress{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--op);transition:width .3s}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:520px;overflow-y:auto;counter-reset:st}
+.steps button{width:100%;text-align:left;font-size:.88rem;padding:7px 10px;border-radius:7px;border:1px solid transparent;background:transparent;cursor:pointer;display:grid;grid-template-columns:26px 1fr;gap:6px;color:var(--muted)}
+.steps button:hover{border-color:var(--line)}
+.steps button[aria-current="step"]{background:var(--sunk);color:var(--ink);border-color:var(--line);font-weight:600}
+.steps .n{font:600 .74rem var(--f-mono);padding-top:2px}
+.steps button.done{color:var(--ink)}
+.a{animation:ain .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*140ms)}
+@keyframes ain{from{opacity:0;transform:translateY(10px)}}
+.flip{animation:flip .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*90ms + 250ms)}
+@keyframes flip{from{opacity:0;transform:rotateX(90deg) scale(.8)}}
+.strike{position:relative;color:var(--zero)}
+.strike::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:2px;background:var(--zero);animation:grow .5s .6s both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}}
+.sumtab{border-collapse:collapse;font-family:var(--f-math);font-size:1.3rem}
+.sumtab td{padding:2px 8px;text-align:right}
+.sumtab td.c{text-align:center}
+.sumtab tr.tot td{border-top:2px solid var(--ink)}
+.sumtab .mult{font:600 .8rem var(--f-mono);color:var(--op);text-align:left}
+.explain-steps{display:grid;gap:4px}
+.vline{border-left:2px solid var(--line);padding-left:14px}
+.result{font-size:1.4rem}
+.verify{display:grid;gap:4px;font-size:1.1rem}
+.verify .okm{color:var(--zero);font-family:var(--f-body);font-weight:700;margin-left:8px;font-size:.95rem}
+
+/* ---------- Teste ---------- */
+.quiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.ans{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.ans label{display:flex;align-items:center;gap:6px;font-family:var(--f-math);font-size:1.2rem}
+.ans input{width:92px;text-align:center;font-family:var(--f-math);font-size:1.05rem}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:1000px){ .bench,.preview,.player,.quiz{grid-template-columns:minmax(0,1fr)} .steps{max-height:none} }
+@media (max-width:720px){ .hero{grid-template-columns:minmax(0,1fr)} .pstage .m{font-size:1.12rem} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body style="margin:0">
+
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Álgebra Linear · Aula 04</div>
+    <h1>Laboratório de <span>Sistemas Lineares</span></h1>
+    <p class="lead">Monte o seu sistema ou sorteie um entre milhões de possibilidades. Depois assista, passo a passo, a cada método da aula resolvendo o mesmo problema: substituição, adição e escalonamento de Gauss.</p>
+  </div>
+  <div class="hero-sys">
+    <span class="lbl">O primeiro exemplo da aula</span>
+    <div class="m" id="hero-sys"></div>
+    <small>A solução de um sistema é a solução comum a todas as equações: aqui, <span class="m" style="font-size:1rem"><i>x</i> = 20 e <i>y</i> = 10</span>.</small>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Seções">
+    <a href="#teoria">1 · Teoria em 5 cartões</a>
+    <a href="#bancada">2 · Monte ou sorteie</a>
+    <a href="#resolucao">3 · Resolução animada</a>
+    <a href="#teste">4 · Teste-se</a>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ================= 1. TEORIA ================= -->
+<section id="teoria">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 1</span>
+    <h2>A teoria em cinco cartões</h2>
+    <p>O essencial para usar o laboratório. O primeiro cartão verifica se uma equação é linear.</p>
+  </div>
+  <div class="theory">
+    <div class="card">
+      <h3>Equação linear</h3>
+      <p>Cada variável tem expoente 1, e não há multiplicação nem divisão entre variáveis. Ex.: <span class="m"><i>x</i> + <i>y</i> − 2<i>z</i> = 3</span>. Não lineares: <span class="m"><i>x</i>² − 5<i>x</i> = −6</span>, <span class="m">3<i>xy</i> + <i>z</i> = 0</span>.</p>
+      <label class="lbl" for="lin-in">Teste uma equação</label>
+      <input type="text" id="lin-in" value="3xy + z = 0" autocomplete="off" spellcheck="false">
+      <div class="msg" id="lin-out" aria-live="polite"></div>
+    </div>
+    <div class="card">
+      <h3>Sistema e solução</h3>
+      <p>Um sistema linear é um conjunto de equações lineares com as mesmas variáveis. Cada equação tem <b>coeficientes</b>, <b>variáveis</b> e um <b>termo independente</b> (sem variável). A solução é o conjunto de valores que satisfaz todas as equações ao mesmo tempo.</p>
+      <div class="m" id="th-general"></div>
+    </div>
+    <div class="card">
+      <h3>Forma matricial</h3>
+      <p>Só os números interessam. A <b>matriz dos coeficientes</b> (incompleta) guarda os coeficientes; a <b>matriz completa</b> (aumentada) inclui também a coluna dos termos independentes.</p>
+      <div id="th-mat"></div>
+    </div>
+    <div class="card">
+      <h3>Classificação</h3>
+      <p><b>SPD</b>: possível e determinado (uma solução). <b>SPI</b>: possível e indeterminado (infinitas). <b>SI</b>: impossível (nenhuma). Em 2×2, cada equação é uma reta:</p>
+      <div class="mini-plots" id="th-plots"></div>
+    </div>
+    <div class="card">
+      <h3>Operações elementares</h3>
+      <p>Transformam o sistema em outro equivalente, com a mesma solução:</p>
+      <ul class="ops-list">
+        <li>trocar duas linhas: <span class="m">L<sub>1</sub> ↔ L<sub>2</sub></span></li>
+        <li>multiplicar uma linha por <i>k</i> ≠ 0: <span class="m">L<sub>2</sub> → −L<sub>2</sub></span></li>
+        <li>somar a uma linha um múltiplo de outra: <span class="m">L<sub>2</sub> → −2L<sub>1</sub> + L<sub>2</sub></span></li>
+      </ul>
+      <p class="hint">Substituição e adição usam as mesmas ideias, escritas com as equações em vez da matriz.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. BANCADA ================= -->
+<section id="bancada">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 2</span>
+    <h2>Monte ou sorteie um sistema</h2>
+    <p>Digite os coeficientes na tabela, escreva as equações em texto, carregue um exemplo da aula ou sorteie um sistema novo. O sistema escolhido aqui é o que será resolvido na seção 3.</p>
+  </div>
+  <div class="bench">
+    <div class="card">
+      <div class="row spread">
+        <div class="seg" id="b-mode" role="group" aria-label="Modo de entrada"><button type="button" data-v="grid" aria-pressed="true">Tabela</button><button type="button" data-v="text" aria-pressed="false">Equações em texto</button></div>
+        <div class="row"><span class="lbl">Tamanho</span><div class="seg" id="b-size" role="group" aria-label="Tamanho do sistema"><button type="button" data-v="2">2×2</button><button type="button" data-v="3">3×3</button><button type="button" data-v="4">4×4</button></div></div>
+      </div>
+      <div id="b-grid-wrap">
+        <div class="grid-in" id="b-grid"></div>
+        <p class="hint" style="margin-top:6px">Aceita inteiros, decimais (0,5) e frações (3/4). Coeficiente 0 significa que a variável não aparece.</p>
+      </div>
+      <div id="b-text-wrap" hidden>
+        <textarea id="b-text" rows="4" spellcheck="false" aria-label="Equações, uma por linha"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn btn-primary" id="b-apply" type="button">Usar estas equações</button><span class="hint">Uma equação por linha, com as variáveis x, y, z e w. Ex.: 2x + 3y - z = 4</span></div>
+      </div>
+      <div class="msg" id="b-msg" aria-live="polite"></div>
+      <div class="row"><label class="lbl" for="b-preset" style="margin:0">Exemplos da aula</label>
+        <select id="b-preset">
+          <option value="">escolha…</option>
+          <option value="s5">Slide 5: x + y = 30</option>
+          <option value="s6">Slides 6–9: 3x + 2y = 12</option>
+          <option value="e1">Exercício 1 (2×2)</option>
+          <option value="e2">Exercício 2 (2×2)</option>
+          <option value="g">Slides 12–16: escalonamento 3×3</option>
+          <option value="ga">Exercício de Gauss A</option>
+          <option value="gb">Exercício de Gauss B</option>
+          <option value="gc">Exercício de Gauss C</option>
+          <option value="gd">Exercício de Gauss D</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Sorteio de sistema</h3>
+      <div class="row"><span class="lbl" style="min-width:86px">Tamanho</span><div class="seg" id="g-n" role="group" aria-label="Tamanho"><button type="button" data-v="2">2×2</button><button type="button" data-v="3">3×3</button><button type="button" data-v="4">4×4</button></div></div>
+      <div class="row"><span class="lbl" style="min-width:86px">Tipo</span><div class="seg" id="g-type" role="group" aria-label="Tipo"><button type="button" data-v="D">SPD</button><button type="button" data-v="I">SPI</button><button type="button" data-v="S">SI</button><button type="button" data-v="X">surpresa</button></div></div>
+      <div class="row"><span class="lbl" style="min-width:86px">Coeficientes</span><div class="seg" id="g-r" role="group" aria-label="Faixa dos coeficientes"><button type="button" data-v="5">−5 a 5</button><button type="button" data-v="9">−9 a 9</button><button type="button" data-v="20">−20 a 20</button></div></div>
+      <div class="row"><span class="lbl" style="min-width:86px">Solução</span><div class="seg" id="g-sol" role="group" aria-label="Tipo de solução"><button type="button" data-v="i">inteira</button><button type="button" data-v="f">fracionária</button></div></div>
+      <label class="row" style="font-size:.92rem;gap:8px"><input type="checkbox" id="g-piv" checked><span>Coeficiente de <i class="v">x</i> igual a 1 na primeira equação, como nos exemplos da aula</span></label>
+      <div class="row"><button class="btn btn-primary" id="g-go" type="button">Sortear sistema</button>
+        <span class="lbl" style="margin:0">ou código</span><input type="text" id="g-code" style="width:150px;font-family:var(--f-mono)" aria-label="Código do sistema" spellcheck="false"><button class="btn" id="g-load" type="button">Carregar</button></div>
+      <p class="hint" id="g-count"></p>
+      <p class="hint">O código reproduz exatamente o mesmo sistema: compartilhe com a turma para todos resolverem o mesmo.</p>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="card">
+      <div class="row spread"><span class="lbl">Sistema atual</span><span id="pv-chip"></span></div>
+      <div class="m" id="pv-sys"></div>
+      <div class="mpair" id="pv-mats"></div>
+      <p class="hint" id="pv-why"></p>
+      <div class="row"><button class="btn" id="pv-show" type="button" aria-expanded="false">Mostrar a solução</button></div>
+      <div class="m" id="pv-sol" hidden></div>
+    </div>
+    <div class="card plot" id="pv-plot-card">
+      <span class="lbl">Interpretação geométrica</span>
+      <div id="pv-plot"></div>
+      <div class="legend" id="pv-legend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. RESOLUÇÃO ================= -->
+<section id="resolucao">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 3</span>
+    <h2>Resolução animada, passo a passo</h2>
+    <p>Escolha o método. Avance com os botões, com as setas do teclado ou em reprodução automática. Clique numa etapa da lista para pular direto para ela.</p>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="row spread">
+      <div class="seg" id="r-method" role="group" aria-label="Método">
+        <button type="button" data-v="sub">Substituição</button>
+        <button type="button" data-v="add">Adição ou subtração</button>
+        <button type="button" data-v="gauss">Escalonamento de Gauss</button>
+      </div>
+      <div class="row" id="r-opt-wrap"><label class="lbl" for="r-opt" id="r-opt-lbl" style="margin:0"></label><select id="r-opt"></select></div>
+    </div>
+    <p class="hint" id="r-avail"></p>
+  </div>
+  <div class="player">
+    <div class="card">
+      <div class="row spread"><span class="pcount" id="p-count"></span><span class="m" id="p-mini" style="font-size:.95rem"></span></div>
+      <h3 class="ptitle" id="p-title"></h3>
+      <div class="progress"><i id="p-prog"></i></div>
+      <div class="pstage" id="p-body" aria-live="polite"></div>
+      <p class="pnote" id="p-note"></p>
+      <div class="row spread">
+        <div class="row">
+          <button class="btn" id="p-first" type="button" aria-label="Primeiro passo">⏮</button>
+          <button class="btn" id="p-prev" type="button">← Anterior</button>
+          <button class="btn btn-primary" id="p-play" type="button">▶ Reproduzir</button>
+          <button class="btn" id="p-next" type="button">Próximo →</button>
+        </div>
+        <div class="row"><label class="lbl" for="p-speed" style="margin:0">Ritmo</label><select id="p-speed"><option value="6500">calmo</option><option value="4200" selected>normal</option><option value="2600">rápido</option></select></div>
+      </div>
+    </div>
+    <div class="card">
+      <span class="lbl">Etapas</span>
+      <ol class="steps" id="p-list"></ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. TESTE ================= -->
+<section id="teste">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 4</span>
+    <h2>Teste-se</h2>
+    <p>Resolva o sistema atual no caderno e confira aqui. Para treinar sem fim: sorteie um sistema novo na seção 2 e volte.</p>
+  </div>
+  <div class="quiz">
+    <div class="card">
+      <span class="lbl">Sistema</span>
+      <div class="m" id="q-sys"></div>
+      <span class="lbl" style="margin-top:6px">Sua resposta</span>
+      <div class="ans" id="q-ans"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="q-check" type="button">Conferir</button>
+        <button class="btn" id="q-spi" type="button">Infinitas soluções (SPI)</button>
+        <button class="btn" id="q-si" type="button">Nenhuma solução (SI)</button>
+      </div>
+      <div class="msg" id="q-msg" aria-live="polite">Aceita inteiros, decimais e frações, como −3/2.</div>
+    </div>
+    <div class="card">
+      <span class="lbl">Seu placar nesta visita</span>
+      <p class="m" id="q-score" style="font-size:1.6rem">0 de 0</p>
+      <p class="hint">Errou? Vá à seção 3 e assista à resolução: o método de Gauss mostra cada operação entre linhas, e a substituição e a adição (em 2×2) mostram cada passagem algébrica.</p>
+      <button class="btn" id="q-new" type="button">Sortear outro sistema com as mesmas opções</button>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Laboratório de Sistemas Lineares · material de apoio para Álgebra Linear (Aula 04: sistemas de equações lineares). Exemplos e exercícios baseados nos slides da aula. Todas as contas são feitas com frações exatas.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const VARS = ['x', 'y', 'z', 'w'];
+const PAR = ['t', 's', 'r'];
+const SUBD = '₀₁₂₃₄₅₆₇₈₉';
+const sub = n => String(n).split('').map(d => SUBD[d]).join('');
+
+/* ================= Frações exatas ================= */
+const gcd = (a, b) => { a = a < 0n ? -a : a; b = b < 0n ? -b : b; while (b) [a, b] = [b, a % b]; return a; };
+class Q {
+  constructor(n, d = 1n){
+    n = BigInt(n); d = BigInt(d); if (d === 0n) throw new Error('divisão por zero');
+    if (d < 0n){ n = -n; d = -d; }
+    const g = gcd(n, d) || 1n; this.n = n/g; this.d = d/g;
+  }
+  static of(x){ return x instanceof Q ? x : new Q(x); }
+  add(b){ b = Q.of(b); return new Q(this.n*b.d + b.n*this.d, this.d*b.d); }
+  sub(b){ b = Q.of(b); return new Q(this.n*b.d - b.n*this.d, this.d*b.d); }
+  mul(b){ b = Q.of(b); return new Q(this.n*b.n, this.d*b.d); }
+  div(b){ b = Q.of(b); return new Q(this.n*b.d, this.d*b.n); }
+  neg(){ return new Q(-this.n, this.d); }
+  abs(){ return new Q(this.n < 0n ? -this.n : this.n, this.d); }
+  get z(){ return this.n === 0n; }
+  get one(){ return this.n === 1n && this.d === 1n; }
+  get isInt(){ return this.d === 1n; }
+  get neg_(){ return this.n < 0n; }
+  eq(b){ b = Q.of(b); return this.n === b.n && this.d === b.d; }
+  num(){ return Number(this.n)/Number(this.d); }
+  str(){ const a = this.n < 0n ? -this.n : this.n; return (this.n < 0n ? '−' : '') + a + (this.d === 1n ? '' : '/' + this.d); }
+}
+const Q0 = new Q(0), Q1 = new Q(1);
+function parseQ(s){
+  s = String(s).trim().replace(/[−–]/g, '-').replace(/,/g, '.').replace(/\s+/g, '');
+  if (!s) return null;
+  const dec = t => { const m = /^([+-]?)(\d*)(?:\.(\d+))?$/.exec(t); if (!m || (!m[2] && !m[3])) return null; const fr = m[3] || ''; const q = new Q(BigInt((m[2] || '0') + fr), 10n ** BigInt(fr.length)); return m[1] === '-' ? q.neg() : q; };
+  if (s.includes('/')){ const [a, b, ...rest] = s.split('/'); if (rest.length) return null; const x = dec(a), y = dec(b); if (!x || !y || y.z) return null; return x.div(y); }
+  return dec(s);
+}
+
+/* ================= Notação ================= */
+function qH(q, o = {}){
+  const neg = q.n < 0n, a = neg ? -q.n : q.n;
+  const core = q.d === 1n ? `${a}` : `<span class="fr"><span>${a}</span><span>${q.d}</span></span>`;
+  const s = (neg ? '−' : '') + core;
+  return o.paren && neg ? `(${s})` : s;
+}
+// termo c·v; first = primeiro da expressão (sem "+")
+function tH(c, v, first, cls = ''){
+  if (c.z) return '';
+  const sign = first ? (c.neg_ ? '−' : '') : (c.neg_ ? ' − ' : ' + ');
+  const mag = c.abs(), coef = v && mag.one ? '' : qH(mag);
+  return `${sign}<span class="t ${cls}">${coef}${v ? `<i>${v}</i>` : ''}</span>`;
+}
+function lhsH(coefs, o = {}){
+  let out = '', first = true;
+  coefs.forEach((c, j) => { if (c.z) return; out += tH(c, (o.vars || VARS)[j], first, (o.cls && o.cls[j]) || ''); first = false; });
+  return out || '0';
+}
+const eqH = (coefs, rhs, o = {}) => `${lhsH(coefs, o)} = ${o.rcls ? `<span class="t ${o.rcls}">${qH(rhs)}</span>` : qH(rhs)}`;
+function sysH(S, o = {}){
+  const rows = S.A.map((r, i) => `<div class="eqrow ${o.dim && o.dim !== i + 1 && o.dim !== 'all' ? 'dim' : ''} ${o.anim ? 'a' : ''}" style="--i:${i}">${o.tags ? `<span class="tag">(${i + 1})</span>` : ''}<span>${eqH(r, S.b[i], { cls:o.cls && o.cls[i] })}</span></div>`).join('');
+  return `<div class="sys"><span class="brace"></span><div class="eqs">${rows}</div></div>`;
+}
+// expressão linear: const + Σ coef·param  (e = {c:Q, p:[Q]})
+function linH(e, names){
+  let out = '', first = true;
+  if (!e.c.z){ out += qH(e.c); first = false; }
+  e.p.forEach((c, k) => { if (c.z) return; out += tH(c, names[k], first); first = false; });
+  return out || '0';
+}
+function matH(M, o = {}){
+  const n = M.length, cols = M[0].length, head = o.head !== false;
+  let h = `<span class="matwrap ${head ? '' : 'nohead'}"><table class="mat">`;
+  if (head) h += `<tr>${o.rowLabels ? '<th></th>' : ''}${Array.from({ length:cols }, (_, j) => `<th class="${j === cols - 1 && o.aug !== false ? 'sep' : ''}">${j < cols - 1 || o.aug === false ? `<i>${VARS[j]}</i>` : ''}</th>`).join('')}</tr>`;
+  M.forEach((r, i) => {
+    const rc = (o.target === i ? 'target' : '') + (o.src === i ? ' src' : '');
+    h += `<tr class="${rc}">${o.rowLabels ? `<td class="rl">L${sub(i + 1)}</td>` : ''}`;
+    r.forEach((v, j) => {
+      const c = [];
+      if (j === cols - 1 && o.aug !== false) c.push('sep');
+      if (o.stair && j < i && j < cols - 1) c.push('below', v.z ? 'zero' : '');
+      if (o.piv && o.piv.some(([pi, pj]) => pi === i && pj === j)) c.push('piv');
+      const ch = o.changed && o.changed.includes(i);
+      h += `<td class="${c.join(' ')} ${ch ? 'flip' : ''} ${o.appear ? 'a' : ''}" style="--i:${o.appear ? i*cols + j : j}">${qH(v)}</td>`;
+    });
+    h += '</tr>';
+  });
+  return h + '</table></span>';
+}
+const clone = M => M.map(r => r.slice());
+
+/* ================= Análise (forma escalonada reduzida) ================= */
+function rref(M0){
+  const R = clone(M0), rows = R.length, cols = R[0].length, piv = []; let r = 0;
+  for (let c = 0; c < cols && r < rows; c++){
+    let p = -1; for (let i = r; i < rows; i++) if (!R[i][c].z){ p = i; break; }
+    if (p < 0) continue;
+    [R[r], R[p]] = [R[p], R[r]];
+    const pv = R[r][c]; R[r] = R[r].map(x => x.div(pv));
+    for (let i = 0; i < rows; i++) if (i !== r && !R[i][c].z){ const f = R[i][c]; R[i] = R[i].map((x, k) => x.sub(f.mul(R[r][k]))); }
+    piv.push(c); r++;
+  }
+  return { R, piv };
+}
+function analyze(S){
+  const n = S.n, aug = S.A.map((r, i) => [...r, S.b[i]]), { R, piv } = rref(aug);
+  if (piv.includes(n)) return { type:'SI', rank:piv.length - 1, rankAug:piv.length };
+  if (piv.length === n) return { type:'SPD', sol:R.slice(0, n).map(r => r[n]), rank:n };
+  const free = [...Array(n).keys()].filter(c => !piv.includes(c));
+  const expr = [];
+  for (let c = 0; c < n; c++){
+    const fi = free.indexOf(c);
+    if (fi >= 0){ expr[c] = { c:Q0, p:free.map((_, k) => k === fi ? Q1 : Q0) }; continue; }
+    const r = piv.indexOf(c);
+    expr[c] = { c:R[r][n], p:free.map(f => R[r][f].neg()) };
+  }
+  return { type:'SPI', free, expr, rank:piv.length };
+}
+const solH = (an, n) => {
+  if (an.type === 'SPD') return `S = {(${an.sol.map(v => qH(v)).join('; ')})}`;
+  if (an.type === 'SI') return 'S = ∅ &nbsp;<span class="hint" style="font-family:var(--f-body)">(nenhuma solução)</span>';
+  const names = an.free.map((_, k) => PAR[k]);
+  return `S = {(${an.expr.slice(0, n).map(e => linH(e, names)).join('; ')}) : ${names.map(t => `<i>${t}</i>`).join(', ')} ∈ ℝ}`;
+};
+
+/* ================= Equação em texto ================= */
+const SUP = { '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-' };
+function parseEq(str){
+  const fail = err => ({ ok:false, err });
+  let s = String(str).toLowerCase().replace(/[−–]/g, '-').replace(/[·×]/g, '*').replace(/\s+/g, '');
+  if (!s) return fail('Equação vazia.');
+  if (/[()]/.test(s)) return fail('Sem parênteses: distribua antes de digitar (2(x + y) vira 2x + 2y).');
+  const parts = s.split('=');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return fail('A equação precisa de exatamente um sinal de igual, com algo dos dois lados.');
+  const coefs = [Q0, Q0, Q0, Q0]; let cst = Q0; const used = new Set();
+  for (let side = 0; side < 2; side++){
+    const sg = side === 0 ? 1 : -1;
+    const terms = parts[side].replace(/\^-/g, '^~').match(/[+-]?[^+-]+/g) || [];
+    if (terms.join('') !== parts[side].replace(/\^-/g, '^~')) return fail('Há um sinal solto na equação.');
+    for (let t of terms){
+      t = t.replace('^~', '^-');
+      const neg = t[0] === '-', body = t.replace(/^[+-]/, ''), show = esc(t);
+      if (!body) return fail('Há um sinal solto na equação.');
+      if (/\/[0-9.]*[a-z]/.test(body)) return fail(`"${show}" divide por uma variável. Numa equação linear não pode haver divisão envolvendo variáveis.`);
+      const ex = /[a-z](?:\^(-?\d+(?:\.\d+)?)|([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))/.exec(body);
+      let b2 = body;
+      if (ex){
+        const e = ex[1] != null ? ex[1] : ex[2].split('').map(c => SUP[c]).join('');
+        if (e !== '1') return fail(`"${show}" tem expoente ${esc(e)}. Numa equação linear todo expoente de variável é 1.`);
+        b2 = body.replace(/\^1|¹/, '');
+      }
+      const letters = b2.match(/[a-z]/g) || [];
+      const bad = letters.filter(l => !VARS.includes(l));
+      if (bad.length) return fail(`"${show}": use só as variáveis x, y, z e w.`);
+      if (letters.length > 1) return fail(`"${show}" multiplica variáveis entre si (${letters.join('·')}). Isso não é permitido numa equação linear.`);
+      if (/[a-z]\d/.test(b2)) return fail(`"${show}": escreva o coeficiente antes da variável, como 2x.`);
+      let numPart = b2.replace(/[a-z]/, '').replace(/\*/g, '');
+      if (numPart.startsWith('/')) numPart = '1' + numPart;
+      let c = numPart === '' ? Q1 : parseQ(numPart);
+      if (!c) return fail(`Não entendi o número em "${show}".`);
+      if (neg) c = c.neg();
+      if (sg < 0) c = c.neg();
+      if (letters.length === 1){ const k = VARS.indexOf(letters[0]); coefs[k] = coefs[k].add(c); used.add(k); }
+      else cst = cst.add(c);
+    }
+  }
+  if (coefs.every(c => c.z)) return fail(used.size ? 'As variáveis se cancelaram: a equação não tem nenhuma variável de fato.' : 'A equação não tem nenhuma variável.');
+  return { ok:true, coefs, rhs:cst.neg(), used };
+}
+
+/* ================= Gerador aleatório reproduzível ================= */
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hashStr(s){ let h = 2166136261; for (const ch of s){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const B32 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newSeed = () => Array.from({ length:6 }, () => B32[Math.floor(Math.random()*B32.length)]).join('');
+const encode = o => `${o.n}${o.type}${o.R}${o.sol}${o.piv ? 'P' : 'L'}-${o.seed}`;
+function decode(code){
+  const m = /^([234])([DISX])(5|9|20)([if])([PL])-([A-Z0-9]{3,12})$/.exec(String(code).trim().toUpperCase().replace(/[IF](?=[PL]-)/, x => x.toLowerCase()));
+  if (!m) return null;
+  return { n:+m[1], type:m[2], R:+m[3], sol:m[4], piv:m[5] === 'P', seed:m[6] };
+}
+function generate(o){
+  const rnd = mulberry32(hashStr(encode(o))), n = o.n, R = o.R;
+  const ri = (lo, hi) => lo + Math.floor(rnd()*(hi - lo + 1));
+  const rnz = (lo, hi) => { let v = 0; while (v === 0) v = ri(lo, hi); return v; };
+  let type = o.type === 'X' ? ['D', 'D', 'I', 'S'][ri(0, 3)] : o.type;
+  const S0 = Math.min(R, 9);
+  const randRow = () => { let row; do { row = Array.from({ length:n }, () => (rnd() < .18 ? 0 : rnz(-R, R))); } while (row.filter(v => v !== 0).length < Math.min(2, n)); return row; };
+  const toQ = M => M.map(r => r.map(v => new Q(v)));
+  for (let tries = 0; tries < 400; tries++){
+    let A;
+    if (type === 'D'){
+      A = Array.from({ length:n }, randRow);
+      if (o.piv){ A[0][0] = 1; }
+      const AQ = toQ(A); if (rref(AQ).piv.length < n) continue;
+      let b, sol;
+      if (o.sol === 'i'){ sol = Array.from({ length:n }, () => ri(-S0, S0)); b = A.map(r => r.reduce((s, a, j) => s + a*sol[j], 0)); }
+      else { b = Array.from({ length:n }, () => ri(-3*R, 3*R)); const an = analyze({ n, A:AQ, b:b.map(v => new Q(v)) }); if (an.sol.every(v => v.isInt) || an.sol.some(v => v.d > 12n)) continue; }
+      return { n, A:AQ, b:b.map(v => new Q(v)), type:'D' };
+    }
+    // SPI ou SI: n − 1 linhas independentes e uma combinação delas
+    A = Array.from({ length:n - 1 }, randRow);
+    if (o.piv) A[0][0] = 1;
+    if (rref(toQ(A)).piv.length < n - 1) continue;
+    const k = Array.from({ length:n - 1 }, () => (n === 2 ? [-3, -2, -1, 2, 3][ri(0, 4)] : ri(-2, 2)));
+    if (k.every(v => v === 0)) continue;
+    const last = Array.from({ length:n }, (_, j) => A.reduce((s, r, i) => s + k[i]*r[j], 0));
+    if (last.every(v => v === 0) || last.some(v => Math.abs(v) > 3*R)) continue;
+    const sol = Array.from({ length:n }, () => ri(-S0, S0));
+    const bTop = A.map(r => r.reduce((s, a, j) => s + a*sol[j], 0));
+    let bLast = k.reduce((s, kk, i) => s + kk*bTop[i], 0);
+    if (type === 'S') bLast += rnz(-6, 6);
+    const rows = [...A.map((r, i) => ({ r, b:bTop[i] })), { r:last, b:bLast }];
+    // embaralha, mantendo a primeira linha com 1x quando pedido
+    const head = o.piv ? rows.shift() : null;
+    for (let i = rows.length - 1; i > 0; i--){ const j = ri(0, i); [rows[i], rows[j]] = [rows[j], rows[i]]; }
+    if (head) rows.unshift(head);
+    return { n, A:toQ(rows.map(x => x.r)), b:rows.map(x => new Q(x.b)), type };
+  }
+  return { n:2, A:toQ([[3, 2], [1, -3]]), b:[new Q(12), new Q(-7)], type:'D' };
+}
+function countText(o){
+  const per = Math.log10(2*o.R + 1)*(o.n*o.n) + Math.log10(2*Math.min(o.R, 9) + 1)*o.n;
+  const e = Math.floor(per);
+  return `Com estas opções há da ordem de 10${String(e).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('')} sistemas diferentes possíveis.`;
+}
+
+/* ================= Estado ================= */
+const PRESETS = {
+  s5:['x + y = 30', 'x - y = 10'],
+  s6:['3x + 2y = 12', 'x - 3y = -7'],
+  e1:['2x + 5y = -14', '4x - 3y = 24'],
+  e2:['x + 2y = 7', '2x - y = -1'],
+  g:['x + y + z = 7', '2x + y - z = 9', 'x - 2y + 2z = 2'],
+  ga:['2x + y - z = 4', 'x - 2y + 3z = 9', '3x + y + 2z = 13'],
+  gb:['2x - y + 2z = 10', '3x + 2y - z = 7', 'x - 3y + 4z = 5'],
+  gc:['x + y + z = 1', 'x - y + 2z = 2', 'x + 6y + 3z = 3'],
+  gd:['2x + 3y + z = 11', 'x + y + z = 6', '5x + 2y + 3z = 18'],
+};
+function fromLines(lines){
+  const n = lines.length;
+  if (n < 2 || n > 4) return { err:'Use de 2 a 4 equações, uma por linha.' };
+  const A = [], b = [];
+  for (let i = 0; i < n; i++){
+    const p = parseEq(lines[i]);
+    if (!p.ok) return { err:`Equação ${i + 1}: ${p.err}` };
+    const extra = [...p.used].filter(k => k >= n);
+    if (extra.length) return { err:`Equação ${i + 1}: com ${n} equações use só ${VARS.slice(0, n).join(', ')} (o sistema precisa ter tantas incógnitas quanto equações).` };
+    if (p.coefs.slice(0, n).every(c => c.z)) return { err:`Equação ${i + 1}: não sobrou nenhuma variável.` };
+    A.push(p.coefs.slice(0, n)); b.push(p.rhs);
+  }
+  return { S:{ n, A, b } };
+}
+const sysText = S => S.A.map((r, i) => {
+  let out = '', first = true;
+  r.forEach((c, j) => { if (c.z) return; const neg = c.neg_, mag = c.abs(); out += (first ? (neg ? '-' : '') : (neg ? ' - ' : ' + ')) + (mag.one ? '' : mag.str()) + VARS[j]; first = false; });
+  return `${out} = ${S.b[i].str().replace('−', '-')}`;
+}).join('\n');
+
+let S = fromLines(PRESETS.s6).S;
+let genOpts = { n:2, type:'D', R:9, sol:'i', piv:true, seed:newSeed() };
+
+/* ================= Seção 1: teoria ================= */
+$('#hero-sys').innerHTML = sysH(fromLines(PRESETS.s5).S);
+$('#th-general').innerHTML = `<div class="sys"><span class="brace"></span><div class="eqs"><div class="eqrow">a<sub>11</sub><i>x</i><sub>1</sub> + a<sub>12</sub><i>x</i><sub>2</sub> + ⋯ + a<sub>1n</sub><i>x</i><sub>n</sub> = b<sub>1</sub></div><div class="eqrow">a<sub>21</sub><i>x</i><sub>1</sub> + a<sub>22</sub><i>x</i><sub>2</sub> + ⋯ + a<sub>2n</sub><i>x</i><sub>n</sub> = b<sub>2</sub></div><div class="eqrow">⋮</div><div class="eqrow">a<sub>m1</sub><i>x</i><sub>1</sub> + a<sub>m2</sub><i>x</i><sub>2</sub> + ⋯ + a<sub>mn</sub><i>x</i><sub>n</sub> = b<sub>m</sub></div></div></div>`;
+{ const G = fromLines(PRESETS.g).S; $('#th-mat').innerHTML = `<div class="mpair">${matH(G.A, { aug:false })}${matH(G.A.map((r, i) => [...r, G.b[i]]))}</div><p class="hint">À esquerda, a matriz dos coeficientes; à direita, a matriz completa do exemplo dos slides 12–16.</p>`; }
+function linCheck(){
+  const p = parseEq($('#lin-in').value), out = $('#lin-out');
+  if (p.ok){ out.className = 'msg ok'; out.innerHTML = `<b>Linear.</b> <span class="m" style="font-size:1.05rem">${eqH(p.coefs.slice(0, Math.max(1, ...[...p.used].map(k => k + 1))), p.rhs)}</span>`; }
+  else { out.className = 'msg bad'; out.innerHTML = `<b>Não é linear (ou não foi possível ler).</b> ${p.err}`; }
+}
+$('#lin-in').addEventListener('input', linCheck); linCheck();
+{
+  const mini = (l1, l2, pt) => `<svg viewBox="0 0 100 80"><line x1="0" y1="40" x2="100" y2="40" stroke="var(--line)"/><line x1="50" y1="0" x2="50" y2="80" stroke="var(--line)"/><line ${l1} stroke="var(--op)" stroke-width="3"/><line ${l2} stroke="var(--sub)" stroke-width="3" stroke-dasharray="7 4"/>${pt ? '<circle cx="50" cy="40" r="5" fill="var(--piv)"/>' : ''}</svg>`;
+  $('#th-plots').innerHTML = `<div>${mini('x1="5" y1="75" x2="95" y2="5"', 'x1="5" y1="5" x2="95" y2="75"', true)}<b class="k-zero">SPD</b>retas que se cruzam</div><div>${mini('x1="5" y1="70" x2="95" y2="10"', 'x1="5" y1="70" x2="95" y2="10"', false)}<b class="k-piv">SPI</b>retas coincidentes</div><div>${mini('x1="5" y1="60" x2="95" y2="0"', 'x1="5" y1="80" x2="95" y2="20"', false)}<b class="k-bad">SI</b>retas paralelas</div>`;
+}
+
+/* ================= Seção 2: bancada ================= */
+let mode = 'grid';
+const setPressed = (sel, v) => document.querySelectorAll(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
+function renderGrid(){
+  const n = S.n, g = $('#b-grid');
+  g.style.gridTemplateColumns = `repeat(${n}, auto auto) auto auto`;
+  let h = '';
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < n; j++){
+      h += `<input type="text" inputmode="decimal" data-i="${i}" data-j="${j}" value="${esc(S.A[i][j].str().replace('−', '-'))}" aria-label="coeficiente de ${VARS[j]} na equação ${i + 1}">`;
+      h += `<span class="op">${j < n - 1 ? `<i>${VARS[j]}</i> +` : `<i>${VARS[j]}</i> =`}</span>`;
+    }
+    h += `<input type="text" inputmode="decimal" data-i="${i}" data-j="b" value="${esc(S.b[i].str().replace('−', '-'))}" aria-label="termo independente da equação ${i + 1}"><span></span>`;
+  }
+  g.innerHTML = h;
+}
+function gridRead(){
+  const n = S.n, A = [], b = []; let bad = 0;
+  for (let i = 0; i < n; i++){ A.push([]); }
+  document.querySelectorAll('#b-grid input').forEach(inp => {
+    const q = parseQ(inp.value); inp.classList.toggle('bad-input', !q);
+    if (!q){ bad++; return; }
+    const i = +inp.dataset.i; if (inp.dataset.j === 'b') b[i] = q; else A[i][+inp.dataset.j] = q;
+  });
+  if (bad) return { err:`${bad} ${bad === 1 ? 'campo não é um número válido' : 'campos não são números válidos'} (use inteiros, decimais ou frações como 3/4).` };
+  for (let i = 0; i < n; i++) if (A[i].every(c => c.z)) return { err:`A equação ${i + 1} ficou sem nenhuma variável (todos os coeficientes são 0). Toda equação do sistema precisa ter pelo menos uma variável.` };
+  return { S:{ n, A, b } };
+}
+let gridT = null;
+$('#b-grid').addEventListener('input', () => {
+  clearTimeout(gridT);
+  gridT = setTimeout(() => { const r = gridRead(); if (r.err) return bMsg(r.err, 'bad'); setSystem(r.S, 'grid'); }, 350);
+});
+function bMsg(t, kind){ const m = $('#b-msg'); m.className = 'msg ' + (kind || ''); m.innerHTML = t; }
+$('#b-mode').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; mode = b.dataset.v; setPressed('#b-mode', mode);
+  $('#b-grid-wrap').hidden = mode !== 'grid'; $('#b-text-wrap').hidden = mode !== 'text';
+  if (mode === 'text') $('#b-text').value = sysText(S);
+});
+$('#b-size').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.v; if (n === S.n) return;
+  // mantém o que der e completa com uma matriz identidade
+  const A = Array.from({ length:n }, (_, i) => Array.from({ length:n }, (_, j) => (S.A[i] && S.A[i][j] !== undefined) ? S.A[i][j] : (i === j ? Q1 : Q0)));
+  const bb = Array.from({ length:n }, (_, i) => S.b[i] || Q0);
+  A.forEach((r, i) => { if (r.every(c => c.z)) r[i] = Q1; });
+  setSystem({ n, A, b:bb });
+});
+$('#b-apply').addEventListener('click', () => {
+  const lines = $('#b-text').value.split(/\n/).map(s => s.trim()).filter(Boolean);
+  const r = fromLines(lines); if (r.err) return bMsg(`<b>Não deu para usar.</b> ${r.err}`, 'bad');
+  setSystem(r.S); bMsg('<b>Sistema carregado.</b>', 'ok');
+});
+$('#b-preset').addEventListener('change', e => { const k = e.target.value; e.target.value = ''; if (!k) return; setSystem(fromLines(PRESETS[k]).S); bMsg(`<b>Exemplo da aula carregado.</b>`, 'ok'); });
+// gerador
+function syncGen(){
+  setPressed('#g-n', genOpts.n); setPressed('#g-type', genOpts.type); setPressed('#g-r', genOpts.R); setPressed('#g-sol', genOpts.sol);
+  $('#g-piv').checked = genOpts.piv; $('#g-count').textContent = countText(genOpts);
+  document.querySelectorAll('#g-sol button').forEach(b => { b.disabled = genOpts.type !== 'D'; });
+}
+[['#g-n', 'n', Number], ['#g-type', 'type', String], ['#g-r', 'R', Number], ['#g-sol', 'sol', String]].forEach(([sel, key, f]) => {
+  $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; genOpts[key] = f(b.dataset.v); syncGen(); });
+});
+$('#g-piv').addEventListener('change', e => { genOpts.piv = e.target.checked; syncGen(); });
+function doGen(){
+  genOpts.seed = newSeed(); const G = generate(genOpts);
+  $('#g-code').value = encode(genOpts);
+  setSystem({ n:G.n, A:G.A, b:G.b }); bMsg(`<b>Sistema sorteado.</b> Código <code>${encode(genOpts)}</code>.`, 'ok');
+}
+$('#g-go').addEventListener('click', doGen);
+$('#q-new').addEventListener('click', () => { doGen(); $('#teste').scrollIntoView({ behavior:reduce ? 'auto' : 'smooth' }); });
+$('#g-load').addEventListener('click', () => {
+  const o = decode($('#g-code').value);
+  if (!o) return bMsg('<b>Código inválido.</b> Ele tem o formato <code>3D9iP-ABC234</code>.', 'bad');
+  genOpts = o; syncGen(); const G = generate(o); setSystem({ n:G.n, A:G.A, b:G.b }); bMsg(`<b>Sistema do código <code>${esc(encode(o))}</code> carregado.</b>`, 'ok');
+});
+$('#g-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#g-load').click(); });
+
+// prévia
+let AN = null;
+function renderPreview(){
+  AN = analyze(S);
+  $('#pv-sys').innerHTML = sysH(S);
+  const M = S.A.map((r, i) => [...r, S.b[i]]);
+  $('#pv-mats').innerHTML = `<div><span class="lbl">coeficientes</span><br>${matH(S.A, { aug:false })}</div><div><span class="lbl">completa</span><br>${matH(M)}</div>`;
+  const chip = { SPD:'<span class="chip spd">SPD · uma solução</span>', SPI:'<span class="chip spi">SPI · infinitas soluções</span>', SI:'<span class="chip si">SI · nenhuma solução</span>' }[AN.type];
+  $('#pv-chip').innerHTML = chip;
+  $('#pv-why').textContent = AN.type === 'SPD' ? `As ${S.n} equações são independentes: o posto da matriz dos coeficientes é ${S.n}.`
+    : AN.type === 'SPI' ? `Uma das equações é combinação das outras: posto ${AN.rank}, menor que ${S.n} incógnitas, e sem contradição.`
+    : `As equações se contradizem: o posto da matriz completa (${AN.rankAug}) é maior que o da matriz dos coeficientes (${AN.rank}).`;
+  $('#pv-sol').innerHTML = solH(AN, S.n);
+  $('#pv-plot-card').hidden = S.n !== 2;
+  if (S.n === 2) renderPlot();
+}
+$('#pv-show').addEventListener('click', e => { const s = $('#pv-sol'); s.hidden = !s.hidden; e.currentTarget.textContent = s.hidden ? 'Mostrar a solução' : 'Esconder a solução'; e.currentTarget.setAttribute('aria-expanded', String(!s.hidden)); });
+function renderPlot(){
+  const W = 320, H = 300;
+  let cx = 0, cy = 0, R = 10;
+  if (AN.type === 'SPD'){ cx = Math.round(AN.sol[0].num()); cy = Math.round(AN.sol[1].num()); R = Math.max(8, Math.ceil(Math.max(Math.abs(AN.sol[0].num() - cx), Math.abs(AN.sol[1].num() - cy))*2 + 6)); }
+  else {
+    const pts = S.A.map((r, i) => r[1].z ? [S.b[i].div(r[0]).num(), 0] : r[0].z ? [0, S.b[i].div(r[1]).num()] : [0, S.b[i].div(r[1]).num()]);
+    cx = Math.round((pts[0][0] + pts[1][0])/2); cy = Math.round((pts[0][1] + pts[1][1])/2);
+    R = Math.max(10, Math.ceil(Math.max(...pts.map(p => Math.max(Math.abs(p[0] - cx), Math.abs(p[1] - cy))))*1.4 + 4));
+  }
+  const x0 = cx - R, x1 = cx + R, y0 = cy - R*H/W, y1 = cy + R*H/W;
+  const X = x => (x - x0)/(x1 - x0)*W, Y = y => H - (y - y0)/(y1 - y0)*H;
+  const step = R <= 12 ? 1 : R <= 30 ? 5 : R <= 80 ? 10 : 50;
+  let g = '';
+  for (let v = Math.ceil(x0/step)*step; v <= x1; v += step) g += `<line class="gr" x1="${X(v)}" y1="0" x2="${X(v)}" y2="${H}"/>`;
+  for (let v = Math.ceil(y0/step)*step; v <= y1; v += step) g += `<line class="gr" x1="0" y1="${Y(v)}" x2="${W}" y2="${Y(v)}"/>`;
+  if (x0 < 0 && x1 > 0) g += `<line class="ax" x1="${X(0)}" y1="0" x2="${X(0)}" y2="${H}"/>`;
+  if (y0 < 0 && y1 > 0) g += `<line class="ax" x1="0" y1="${Y(0)}" x2="${W}" y2="${Y(0)}"/>`;
+  const tk = step*Math.max(1, Math.round(R/(step*3)));
+  for (let v = Math.ceil(x0/tk)*tk; v <= x1; v += tk) if (v !== 0) g += `<text class="tk" x="${X(v) + 2}" y="${Math.min(H - 4, Math.max(12, Y(0) + 13))}">${v}</text>`;
+  for (let v = Math.ceil(y0/tk)*tk; v <= y1; v += tk) if (v !== 0) g += `<text class="tk" x="${Math.min(W - 24, Math.max(2, X(0) + 4))}" y="${Y(v) - 3}">${v}</text>`;
+  const line = (r, b, cls) => {
+    const a = r[0].num(), c = r[1].num(), d = b.num();
+    if (Math.abs(c) < 1e-12){ const x = d/a; return `<line class="${cls}" x1="${X(x)}" y1="0" x2="${X(x)}" y2="${H}"/>`; }
+    return `<line class="${cls}" x1="0" y1="${Y((d - a*x0)/c)}" x2="${W}" y2="${Y((d - a*x1)/c)}"/>`;
+  };
+  g += line(S.A[0], S.b[0], 'l1') + line(S.A[1], S.b[1], 'l2');
+  if (AN.type === 'SPD'){
+    const px = X(AN.sol[0].num()), py = Y(AN.sol[1].num());
+    g += `<circle class="pt" cx="${px}" cy="${py}" r="6"/><text x="${px + 9}" y="${py - 9}">(${AN.sol[0].str()}; ${AN.sol[1].str()})</text>`;
+  }
+  $('#pv-plot').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Retas do sistema"><defs><clipPath id="cp"><rect width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#cp)">${g}</g></svg>`;
+  $('#pv-legend').innerHTML = `<span><span class="sw" style="background:var(--op)"></span><span class="m" style="font-size:1rem">${eqH(S.A[0], S.b[0])}</span></span><span><span class="sw" style="background:var(--sub)"></span><span class="m" style="font-size:1rem">${eqH(S.A[1], S.b[1])}</span></span><span class="hint">${AN.type === 'SPD' ? 'O ponto de encontro é a solução.' : AN.type === 'SPI' ? 'Retas coincidentes: todos os pontos servem.' : 'Retas paralelas: nunca se encontram.'}</span>`;
+}
+
+function setSystem(nS, from){
+  S = nS;
+  setPressed('#b-size', S.n);
+  if (from !== 'grid') renderGrid();
+  if (mode === 'text' && from !== 'text') $('#b-text').value = sysText(S);
+  if (from === 'grid') bMsg('');
+  $('#pv-sol').hidden = true; $('#pv-show').textContent = 'Mostrar a solução';
+  renderPreview(); buildPlayer(); renderQuiz();
+}
+
+/* ================= Seção 3: métodos ================= */
+const ordinal = k => `${k + 1}ª`;
+const coefTimes = (a, inner, first) => { // a·(inner) com sinal
+  const sign = first ? (a.neg_ ? '−' : '') : (a.neg_ ? ' − ' : ' + ');
+  const mag = a.abs();
+  return `${sign}<span class="t hl">${mag.one ? '' : qH(mag)}(${inner})</span>`;
+};
+const L = i => `L${sub(i + 1)}`;
+function verifySteps(S0, vals, note){
+  const lines = S0.A.map((r, i) => {
+    let out = '', first = true;
+    r.forEach((c, j) => { if (c.z) return; const sign = first ? (c.neg_ ? '−' : '') : (c.neg_ ? ' − ' : ' + '); out += `${sign}${c.abs().one ? '' : qH(c.abs()) + '·'}${qH(vals[j], { paren:true })}`; first = false; });
+    return `<div class="eqrow a" style="--i:${i + 1}">${out} = ${qH(S0.b[i])}<span class="okm">✓</span></div>`;
+  }).join('');
+  return { title:'Solução e verificação', note:note || 'Conferimos substituindo os valores em todas as equações originais: todas fecham.',
+    body:`<div class="m result a">S = {(${vals.map(v => qH(v)).join('; ')})}</div><div class="m verify">${lines}</div>` };
+}
+function endSPI(params, exprs, note){
+  return { title:'Infinitas soluções (SPI)', note,
+    body:`<div class="m result a">S = {(${exprs.map(e => linH(e, params)).join('; ')}) : ${params.map(t => `<i>${t}</i>`).join(', ')} ∈ ℝ}</div><p class="a hint" style="--i:2">Cada valor de ${params.map(t => `<i>${t}</i>`).join(', ')} dá uma solução diferente.</p>` };
+}
+const endSI = note => ({ title:'Nenhuma solução (SI)', note, body:`<div class="m result a">S = ∅</div>` });
+
+// ---------- Substituição (2×2) ----------
+function subChoices(S0){
+  const ch = [];
+  for (let k = 0; k < 2; k++) for (let v = 0; v < 2; v++) if (!S0.A[k][v].z) ch.push({ k, v, c:S0.A[k][v] });
+  const score = c => (c.c.abs().one ? 0 : c.c.isInt ? 10 + Number(c.c.abs().n) : 100) - c.k*0.5;
+  ch.sort((a, b) => score(a) - score(b));
+  return ch;
+}
+function buildSub(S0, choice){
+  const steps = [], A = S0.A, b = S0.b, k = choice.k, m = 1 - k, v = choice.v, u = 1 - v, V = VARS[v], U = VARS[u];
+  const p = A[k][v], q = A[k][u], r = b[k];
+  steps.push({ title:'Escolher o que isolar', note:`Vamos isolar <i>${V}</i> na ${ordinal(k)} equação${p.abs().one ? `: o coeficiente de <i>${V}</i> é ${qH(p)}, o que deixa a conta mais simples` : ''}. Outras escolhas também funcionam e você pode trocá-la no menu acima.`,
+    body:`<div class="m">${sysH(S0, { tags:true, cls:A.map((_, i) => i === k ? (v === 0 ? ['hl', ''] : ['', 'hl']) : []) })}</div>` });
+  const alpha = r.div(p), beta = q.neg().div(p);
+  const isoExpr = linH({ c:alpha, p:[beta] }, [U]);
+  if (!q.z){
+    steps.push({ title:`Isolar ${V}`, note:`O termo ${tH(q, U, true)} muda de lado do sinal de igual e troca de sinal.`,
+      body:`<div class="m eqrow">${tH(p, V, true)}${tH(q, U, false, 'mv')} = ${qH(r)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2">${tH(p, V, true)} = ${qH(r)}${tH(q.neg(), U, false, 'mv')}</div>` });
+    if (!p.one) steps.push({ title:`Isolar ${V}`, note:`Dividimos os dois lados por ${qH(p)}.`,
+      body:`<div class="m eqrow">${tH(p, V, true)} = ${qH(r)}${tH(q.neg(), U, false)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2"><i>${V}</i> = <span class="t hl">${isoExpr}</span></div>` });
+  } else {
+    steps.push({ title:`Isolar ${V}`, note:`A ${ordinal(k)} equação só tem <i>${V}</i>: ela já dá o valor dele.`,
+      body:`<div class="m eqrow">${tH(p, V, true)} = ${qH(r)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2"><i>${V}</i> = <span class="box">${qH(alpha)}</span></div>` });
+  }
+  const a = A[m][v], c = A[m][u], d = b[m];
+  let K, D;
+  if (a.z){
+    K = c; D = d;
+    steps.push({ title:'A outra equação', note:`A ${ordinal(m)} equação não tem <i>${V}</i>: ela já envolve só <i>${U}</i>.`, body:`<div class="m eqrow">${eqH(A[m], d)}</div>` });
+  } else {
+    const parts = [0, 1].map(j => j === v ? coefTimes(a, isoExpr, j === 0 || (j === 1 && A[m][0].z && v === 1)) : tH(c, U, j === 0 || (A[m][v].z)));
+    const subst = v === 0 ? coefTimes(a, isoExpr, true) + tH(c, U, false) : (A[m][0].z ? '' : tH(c, U, true)) + coefTimes(a, isoExpr, c.z);
+    steps.push({ title:'Substituir', note:`Na ${ordinal(m)} equação, trocamos <i>${V}</i> pela expressão encontrada.`,
+      body:`<div class="m eqrow">${eqH(A[m], d, { cls:v === 0 ? ['hl', ''] : ['', 'hl'] })}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2">${subst} = ${qH(d)}</div>` });
+    void parts;
+    const aAlpha = a.mul(alpha), aBeta = a.mul(beta);
+    if (!beta.z || !alpha.z){
+      const dist = (v === 0 ? `${aAlpha.z ? '' : qH(aAlpha)}${tH(aBeta, U, aAlpha.z, 'mv')}${tH(c, U, aAlpha.z && aBeta.z)}` : `${tH(c, U, true)}${aAlpha.z ? '' : (aAlpha.neg_ ? ' − ' : ' + ') + qH(aAlpha.abs())}${tH(aBeta, U, c.z && aAlpha.z, 'mv')}`) || '0';
+      steps.push({ title:'Aplicar a distributiva', note:`Multiplicamos ${qH(a)} por cada termo dentro dos parênteses.`,
+        body:`<div class="m eqrow">${subst} = ${qH(d)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2">${dist} = ${qH(d)}</div>` });
+    }
+    K = aBeta.add(c); D = d.sub(aAlpha);
+    steps.push({ title:`Juntar os termos em ${U}`, note:`Somamos os coeficientes de <i>${U}</i> e passamos o número ${qH(aAlpha)} para o outro lado.`,
+      body:`<div class="m eqrow a">(${qH(aBeta)} ${c.neg_ ? '−' : '+'} ${qH(c.abs())})<i>${U}</i> = ${qH(d)} ${aAlpha.neg_ ? '+' : '−'} ${qH(aAlpha.abs())}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a" style="--i:2">${tH(K, U, true) || '0'} = ${qH(D)}</div>` });
+  }
+  if (K.z){
+    if (D.z){
+      steps.push({ title:'Uma identidade', note:`<i>${U}</i> desapareceu e sobrou 0 = 0, que é sempre verdade: qualquer valor de <i>${U}</i> serve.`, body:`<div class="m result a">0 = 0</div>` });
+      const exprs = []; exprs[u] = { c:Q0, p:[Q1] }; exprs[v] = { c:alpha, p:[beta] };
+      steps.push(endSPI(['t'], exprs, `Chamamos <i>${U}</i> = <i>t</i> e usamos <i>${V}</i> = ${isoExpr.replace(new RegExp(`<i>${U}</i>`, 'g'), '<i>t</i>')}.`));
+    } else {
+      steps.push({ title:'Uma contradição', note:`<i>${U}</i> desapareceu e sobrou 0 = ${qH(D)}, que é falso. Nenhum par de valores satisfaz as duas equações.`, body:`<div class="m result a">0 = ${qH(D)} &nbsp;✗</div>` });
+      steps.push(endSI('O sistema é impossível: as retas são paralelas.'));
+    }
+    return steps;
+  }
+  const uVal = D.div(K);
+  steps.push({ title:`Calcular ${U}`, note:K.one ? `Já temos <i>${U}</i>.` : `Dividimos os dois lados por ${qH(K)}.`,
+    body:`<div class="m eqrow">${tH(K, U, true)} = ${qH(D)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow a result" style="--i:2"><i>${U}</i> = ${K.one ? '' : `${qH(D)} ÷ ${qH(K, { paren:true })} = `}<span class="box">${qH(uVal)}</span></div>` });
+  const vVal = alpha.add(beta.mul(uVal));
+  steps.push({ title:`Voltar e calcular ${V}`, note:`Substituímos <i>${U}</i> = ${qH(uVal)} na expressão de <i>${V}</i>.`,
+    body:`<div class="m eqrow"><i>${V}</i> = ${isoExpr}</div><div class="m eqrow a" style="--i:1"><i>${V}</i> = ${linH({ c:alpha, p:[] }, [])}${beta.z ? '' : ` ${beta.neg_ ? '−' : '+'} ${beta.abs().one ? '' : qH(beta.abs()) + '·'}${qH(uVal, { paren:true })}`}</div><div class="m eqrow a result" style="--i:2"><i>${V}</i> = <span class="box">${qH(vVal)}</span></div>` });
+  const vals = []; vals[u] = uVal; vals[v] = vVal;
+  steps.push(verifySteps(S0, vals));
+  return steps;
+}
+
+// ---------- Adição ou subtração (2×2) ----------
+function addChoices(S0){
+  const sc = e => { const a = S0.A[0][e], b2 = S0.A[1][e]; if (a.z || b2.z) return 50; if (a.isInt && b2.isInt && (a.n % b2.n === 0n || b2.n % a.n === 0n)) return 0 + Number((a.abs().n > b2.abs().n ? a.abs().n : b2.abs().n)); return 20; };
+  return [0, 1].sort((p, q) => sc(p) - sc(q));
+}
+function buildAdd(S0, e){
+  const steps = [], A = S0.A, b = S0.b, u = 1 - e, E = VARS[e], U = VARS[u];
+  const e1 = A[0][e], e2 = A[1][e];
+  steps.push({ title:'Escolher a variável a cancelar', note:`Vamos somar as equações de modo que <i>${E}</i> desapareça. Os coeficientes de <i>${E}</i> são ${qH(e1)} e ${qH(e2)}.`,
+    body:`<div class="m">${sysH(S0, { tags:true, cls:[e === 0 ? ['hl', ''] : ['', 'hl'], e === 0 ? ['hl', ''] : ['', 'hl']] })}</div>` });
+  let m1 = Q1, m2 = Q1;
+  if (e1.z || e2.z){
+    const k = e1.z ? 0 : 1;
+    steps.push({ title:'Uma equação já sem ' + E, note:`A ${ordinal(k)} equação não tem <i>${E}</i>: não precisa somar nada, ela já dá <i>${U}</i>.`, body:`<div class="m eqrow">${eqH(A[k], b[k])}</div>` });
+    m1 = k === 0 ? Q1 : Q0; m2 = k === 1 ? Q1 : Q0;
+  } else {
+    if (e1.isInt && e2.isInt){
+      const a1 = e1.n, a2 = e2.n;
+      if (a1 % a2 === 0n){ m1 = Q1; m2 = new Q(-a1/a2); }
+      else if (a2 % a1 === 0n){ m1 = new Q(-a2/a1); m2 = Q1; }
+      else { const g = gcd(a1, a2), Lc = (a1 < 0n ? -a1 : a1)*(a2 < 0n ? -a2 : a2)/g; m1 = new Q(Lc/a1); m2 = new Q(-Lc/a2); }
+    } else { m1 = Q1; m2 = e1.div(e2).neg(); }
+    const E1 = { r:A[0].map(x => x.mul(m1)), b:b[0].mul(m1) }, E2 = { r:A[1].map(x => x.mul(m2)), b:b[1].mul(m2) };
+    const what = [m1, m2].map((mm, i) => mm.one ? null : `a ${ordinal(i)} equação por ${qH(mm, { paren:true })}`).filter(Boolean);
+    const sameSub = m1.one && m2.eq(new Q(-1));
+    steps.push({ title:'Multiplicar para igualar', note:what.length ? `Para cancelar <i>${E}</i>, multiplicamos ${what.join(' e ')}. Assim os coeficientes de <i>${E}</i> ficam opostos: ${qH(E1.r[e])} e ${qH(E2.r[e])}.${sameSub ? ' Multiplicar por −1 e somar é o mesmo que subtrair as equações.' : ''}` : `Os coeficientes de <i>${E}</i> já são opostos: basta somar.`,
+      body:[0, 1].map(i => { const mm = i ? m2 : m1, EE = i ? E2 : E1; return `<div class="eqrow m"><span class="tag">(${i + 1})</span>${eqH(A[i], b[i])}${mm.one ? '' : `<span class="opchip a" style="--i:${i + 1}">× ${qH(mm, { paren:true })}</span><span class="arrow a" style="--i:${i + 1}">→</span><span class="a flip" style="--i:${i + 2}">${eqH(EE.r, EE.b, { cls:e === 0 ? ['mv', ''] : ['', 'mv'] })}</span>`}</div>`; }).join('') });
+    const K = E1.r[u].add(E2.r[u]), D = E1.b.add(E2.b);
+    const cell = (c, v, first) => c.z ? (first ? '0' : '') : tH(c, v, first);
+    const rowH = (EE, cls) => `<tr class="${cls}"><td class="c"></td>${[0, 1].map(j => `<td>${tH(EE.r[j], VARS[j], j === 0 || EE.r[0].z) || '0'}</td>`).join('')}<td class="c">=</td><td>${qH(EE.b)}</td></tr>`;
+    steps.push({ title:'Somar as equações', note:`Somamos coluna a coluna: <i>${E}</i> se cancela (${qH(E1.r[e])} + ${qH(E2.r[e], { paren:true })} = 0) e sobra uma equação só com <i>${U}</i>.`,
+      body:`<table class="sumtab"><tbody>${rowH(E1, 'a')}<tr class="a" style="--i:1"><td class="c" style="color:var(--op);font-weight:700">+</td>${[0, 1].map(j => `<td>${tH(E2.r[j], VARS[j], j === 0 || E2.r[0].z) || '0'}</td>`).join('')}<td class="c">=</td><td>${qH(E2.b)}</td></tr>
+        <tr class="tot"><td></td>${[0, 1].map(j => j === e ? `<td><span class="strike a" style="--i:3">0<i>${E}</i></span></td>` : `<td class="a" style="--i:4">${cell(K, U, true)}</td>`).join('')}<td class="c a" style="--i:4">=</td><td class="a" style="--i:5">${qH(D)}</td></tr></tbody></table>` });
+    if (K.z){
+      if (D.z){ steps.push({ title:'Uma identidade', note:`As duas variáveis sumiram e sobrou 0 = 0: as equações são proporcionais. Há infinitas soluções.`, body:`<div class="m result a">0 = 0</div>` }); return finishSPI2(S0, steps); }
+      steps.push({ title:'Uma contradição', note:`As variáveis sumiram e sobrou 0 = ${qH(D)}, que é falso.`, body:`<div class="m result a">0 = ${qH(D)} &nbsp;✗</div>` });
+      steps.push(endSI('O sistema é impossível: as retas são paralelas.')); return steps;
+    }
+    const uVal = D.div(K);
+    steps.push({ title:`Calcular ${U}`, note:K.one ? `Já temos <i>${U}</i>.` : `Dividimos os dois lados por ${qH(K)}.`,
+      body:`<div class="m eqrow">${tH(K, U, true)} = ${qH(D)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow result a" style="--i:2"><i>${U}</i> = <span class="box">${qH(uVal)}</span></div>` });
+    return backSub2(S0, steps, e, u, uVal);
+  }
+  // caso em que uma equação já não tem E
+  const k = e1.z ? 0 : 1, K = A[k][u], D = b[k];
+  const uVal = D.div(K);
+  steps.push({ title:`Calcular ${U}`, note:K.one ? `Já temos <i>${U}</i>.` : `Dividimos por ${qH(K)}.`, body:`<div class="m eqrow">${tH(K, U, true)} = ${qH(D)}</div><div class="arrow a" style="--i:1">↓</div><div class="m eqrow result a" style="--i:2"><i>${U}</i> = <span class="box">${qH(uVal)}</span></div>` });
+  return backSub2(S0, steps, e, u, uVal);
+}
+function backSub2(S0, steps, e, u, uVal){
+  const A = S0.A, b = S0.b, E = VARS[e], U = VARS[u];
+  const cand = [0, 1].filter(i => !A[i][e].z).sort((i, j) => (A[i][e].abs().one ? 0 : 1) - (A[j][e].abs().one ? 0 : 1) || i - j);
+  const i = cand[0], c = A[i][e], o = A[i][u];
+  const rhs = b[i].sub(o.mul(uVal)), eVal = rhs.div(c);
+  const subst = e === 0 ? `${tH(c, E, true)}${o.z ? '' : ` ${o.neg_ ? '−' : '+'} ${o.abs().one ? '' : qH(o.abs()) + '·'}${qH(uVal, { paren:true })}`}` : `${o.z ? '' : `${o.neg_ ? '−' : ''}${o.abs().one ? '' : qH(o.abs()) + '·'}${qH(uVal, { paren:true })}`}${tH(c, E, o.z)}`;
+  steps.push({ title:`Substituir para achar ${E}`, note:`Basta substituir <i>${U}</i> = ${qH(uVal)} em qualquer equação. Usamos a ${ordinal(i)}.`,
+    body:`<div class="m eqrow">${subst} = ${qH(b[i])}</div><div class="m eqrow a" style="--i:1">${tH(c, E, true)} = ${qH(b[i])} ${o.mul(uVal).neg_ ? '+' : '−'} ${qH(o.mul(uVal).abs())}</div>${c.one ? '' : `<div class="m eqrow a" style="--i:2"><i>${E}</i> = ${qH(rhs)} ÷ ${qH(c, { paren:true })}</div>`}<div class="m eqrow result a" style="--i:3"><i>${E}</i> = <span class="box">${qH(eVal)}</span></div>` });
+  const vals = []; vals[e] = eVal; vals[u] = uVal;
+  steps.push(verifySteps(S0, vals));
+  return steps;
+}
+function finishSPI2(S0, steps){
+  const an = analyze(S0); steps.push(endSPI(['t'], an.expr, 'Escolhendo uma variável livre <i>t</i>, a outra fica em função dela.')); return steps;
+}
+
+// ---------- Escalonamento de Gauss ----------
+function fLabel(f, i){ // f·L_i
+  if (f.one) return L(i);
+  if (f.eq(new Q(-1))) return '−' + L(i);
+  const mag = f.abs();
+  return (f.neg_ ? '−' : '') + (mag.isInt ? String(mag.n) : `(${mag.str()})`) + L(i);
+}
+function buildGauss(S0){
+  const n = S0.n, steps = [];
+  let M = S0.A.map((r, i) => [...r, S0.b[i]]);
+  steps.push({ title:'1º passo: matriz completa', note:'Cada equação vira uma linha. As colunas guardam os coeficientes de cada variável e, depois da barra, o termo independente.',
+    body:`<div class="mpair"><div class="m">${sysH(S0)}</div><span class="arrow a" style="--i:1">⇒</span>${matH(M, { appear:true, rowLabels:true })}</div>` });
+  steps.push({ title:'2º passo: a escadinha', note:'Objetivo: zeros embaixo da escadinha (as células sombreadas) e 1 nos degraus, os pivôs. Fazemos isso só com operações elementares entre linhas.',
+    body:`<div class="mpair">${matH(M, { rowLabels:true, stair:true })}<span class="arrow">⇒</span>${matH(Array.from({ length:n }, (_, i) => Array.from({ length:n + 1 }, (_, j) => j < i ? Q0 : j === i ? Q1 : null)).map(r => r.map(v => v || new Q(0))), { rowLabels:true, stair:true, piv:Array.from({ length:n }, (_, i) => [i, i]) }).replace(/<td class="([^"]*)"([^>]*)>0<\/td>/g, (m0, cls, rest) => cls.includes('below') || cls.includes('piv') ? m0 : `<td class="${cls}"${rest}>X</td>`)}</div>` });
+  let row = 0; const pivs = [];
+  for (let j = 0; j < n && row < n; j++){
+    let pr = -1;
+    for (let i = row; i < n; i++) if (M[i][j].one){ pr = i; break; }
+    if (pr < 0 && !M[row][j].z) pr = row;
+    if (pr < 0) for (let i = row + 1; i < n; i++) if (!M[i][j].z){ pr = i; break; }
+    if (pr < 0){
+      steps.push({ title:`Coluna de ${VARS[j]} sem pivô`, note:`Abaixo da linha ${row + 1}, a coluna de <i>${VARS[j]}</i> só tem zeros. Não há pivô aqui: <i>${VARS[j]}</i> será uma variável livre. Seguimos para a próxima coluna.`,
+        body:matH(M, { rowLabels:true, stair:true, piv:pivs }) });
+      continue;
+    }
+    if (pr !== row){
+      const before = clone(M); [M[row], M[pr]] = [M[pr], M[row]];
+      const why = M[row][j].one ? `trazemos para o topo a linha que tem 1 na coluna de <i>${VARS[j]}</i>: é o "fixar o pivô 1 no topo da escadinha"` : `o pivô não pode ser 0, então trocamos com uma linha que tem número diferente de zero nessa coluna`;
+      steps.push({ title:'Fixar o pivô', note:`Trocamos ${L(row)} e ${L(pr)}: ${why}.`,
+        body:`<div class="mpair">${matH(before, { rowLabels:true, stair:true, piv:pivs })}<div class="opstack"><span class="opchip a">${L(row)} ↔ ${L(pr)}</span><span class="arrow">→</span></div>${matH(M, { rowLabels:true, stair:true, piv:[...pivs, [row, j]], changed:[row, pr] })}</div>` });
+    }
+    pivs.push([row, j]);
+    for (let i = row + 1; i < n; i++){
+      if (M[i][j].z) continue;
+      const f = M[i][j].div(M[row][j]).neg(), before = clone(M);
+      const scaled = M[row].map(x => x.mul(f)), newRow = scaled.map((x, c) => x.add(before[i][c]));
+      M[i] = newRow;
+      const op = `${L(i)} → ${fLabel(f, row)} + ${L(i)}`;
+      const calc = `<table class="calc"><tr class="a" style="--i:1"><td class="lab">${fLabel(f, row)}</td>${scaled.map(x => `<td>${qH(x)}</td>`).join('')}</tr><tr class="a" style="--i:2"><td class="lab">${L(i)}</td>${before[i].map(x => `<td>${qH(x)}</td>`).join('')}</tr><tr class="sum a" style="--i:3"><td class="lab">soma</td>${newRow.map((x, c) => `<td class="${c === j ? 'k-zero' : ''}">${qH(x)}</td>`).join('')}</tr></table>`;
+      steps.push({ title:`Zerar embaixo do pivô (coluna de ${VARS[j]})`, note:`O pivô é ${qH(M[row][j])} em ${L(row)}. Para zerar o ${qH(before[i][j])} de ${L(i)}, somamos a ${L(i)} a linha ${L(row)} multiplicada por ${qH(f, { paren:true })}.`,
+        body:`<div class="mpair">${matH(before, { rowLabels:true, stair:true, piv:pivs, target:i, src:row })}<div class="opstack"><span class="opchip a">${op}</span>${calc}</div>${matH(M, { rowLabels:true, stair:true, piv:pivs, changed:[i] })}</div>` });
+    }
+    row++;
+  }
+  const rank = pivs.length;
+  // contradição?
+  for (let i = rank; i < n; i++){
+    if (!M[i][n].z){
+      steps.push({ title:'Uma linha impossível', note:`${L(i)} ficou com zeros em todos os coeficientes e ${qH(M[i][n])} no termo independente: 0 = ${qH(M[i][n])}, uma contradição.`,
+        body:`<div class="mpair">${matH(M, { rowLabels:true, stair:true, piv:pivs, target:i })}<div class="m eqrow a">${L(i)}: 0<i>x</i> + ⋯ = ${qH(M[i][n])} &nbsp;✗</div></div>` });
+      steps.push(endSI('O sistema é impossível (SI).'));
+      return steps;
+    }
+  }
+  // pivôs = 1
+  const before = clone(M), ops = [], ch = [];
+  pivs.forEach(([r, c]) => {
+    const p = M[r][c]; if (p.one) return;
+    M[r] = M[r].map(x => x.div(p)); ch.push(r);
+    ops.push(p.eq(new Q(-1)) ? `${L(r)} → −${L(r)}` : p.isInt && !p.neg_ ? `${L(r)} → ${L(r)}/${p.n}` : `${L(r)} → ${fLabel(Q1.div(p), r)}`);
+  });
+  if (ops.length) steps.push({ title:'Deixar os pivôs iguais a 1', note:`Dividimos cada linha pelo seu pivô: "em cima da escadinha é 1".`,
+    body:`<div class="mpair">${matH(before, { rowLabels:true, stair:true, piv:pivs })}<div class="opstack">${ops.map((o, k) => `<span class="opchip a" style="--i:${k}">${o}</span>`).join('')}<span class="arrow">→</span></div>${matH(M, { rowLabels:true, stair:true, piv:pivs, changed:ch })}</div>` });
+  else steps.push({ title:'Pivôs já iguais a 1', note:'Todos os pivôs já valem 1: a matriz está escalonada.', body:matH(M, { rowLabels:true, stair:true, piv:pivs }) });
+  // retrossubstituição
+  const free = [...Array(n).keys()].filter(c => !pivs.some(([, pc]) => pc === c));
+  const names = free.map((_, k) => PAR[k]);
+  const ex = [];
+  free.forEach((c, k) => { ex[c] = { c:Q0, p:free.map((_, kk) => kk === k ? Q1 : Q0) }; });
+  if (free.length) steps.push({ title:'Variáveis livres', note:`${free.map(c => `<i>${VARS[c]}</i>`).join(', ')} não ${free.length > 1 ? 'têm' : 'tem'} pivô: ${free.length > 1 ? 'viram parâmetros' : 'vira um parâmetro'} e pode${free.length > 1 ? 'm' : ''} assumir qualquer valor. ${n - rank > 0 ? `${n - rank === 1 ? 'Uma linha zerada inteira' : 'Linhas zeradas inteiras'} (0 = 0) não ${n - rank === 1 ? 'traz' : 'trazem'} informação.` : ''}`,
+    body:`<div class="m">${free.map((c, k) => `<div class="eqrow a" style="--i:${k}"><i>${VARS[c]}</i> = <i>${names[k]}</i></div>`).join('')}</div>` });
+  for (let k = pivs.length - 1; k >= 0; k--){
+    const [r, c] = pivs[k], rowv = M[r];
+    const known = [];
+    for (let j = c + 1; j < n; j++) if (!rowv[j].z) known.push(j);
+    let e = { c:rowv[n], p:free.map(() => Q0) };
+    known.forEach(j => { e = { c:e.c.sub(rowv[j].mul(ex[j].c)), p:e.p.map((x, kk) => x.sub(rowv[j].mul(ex[j].p[kk]))) }; });
+    ex[c] = e;
+    const eqLine = `${lhsH(rowv.slice(0, n))} = ${qH(rowv[n])}`;
+    if (!known.length){
+      steps.push({ title:`Encontrar ${VARS[c]}`, note:`A última linha não nula já dá <i>${VARS[c]}</i> direto.`,
+        body:`<div class="vline m"><div class="eqrow">${eqLine}</div><div class="eqrow result a" style="--i:1"><span class="box">${'<i>' + VARS[c] + '</i> = ' + linH(e, names)}</span></div></div>` });
+      continue;
+    }
+    const substL = `<i>${VARS[c]}</i>${known.map(j => { const a = rowv[j]; return ` ${a.neg_ ? '−' : '+'} ${a.abs().one ? '' : qH(a.abs()) + '·'}(${linH(ex[j], names)})`; }).join('')} = ${qH(rowv[n])}`;
+    const isNum = free.length === 0;
+    const mid = isNum ? `<i>${VARS[c]}</i> = ${qH(rowv[n])}${known.map(j => { const t = rowv[j].mul(ex[j].c); return ` ${t.neg_ ? '+' : '−'} ${qH(t.abs())}`; }).join('')}` : '';
+    steps.push({ title:`Retrossubstituição: ${VARS[c]}`, note:`Da ${L(r)} da matriz escalonada sai a equação abaixo. Substituímos os valores já conhecidos e isolamos <i>${VARS[c]}</i>.`,
+      body:`<div class="vline m"><div class="eqrow">${eqLine}</div><div class="eqrow a" style="--i:1">${substL}</div>${mid ? `<div class="eqrow a" style="--i:2">${mid}</div>` : ''}<div class="eqrow result a" style="--i:3"><span class="box"><i>${VARS[c]}</i> = ${linH(e, names)}</span></div></div>` });
+  }
+  if (free.length){ steps.push(endSPI(names, ex, 'O sistema é possível e indeterminado (SPI): uma solução para cada valor dos parâmetros.')); return steps; }
+  steps.push(verifySteps(S0, ex.map(e => e.c)));
+  return steps;
+}
+
+// ---------- Player ----------
+let method = 'sub', steps = [], cur = 0, playT = null, playing = false;
+function methodAvail(){
+  const two = S.n === 2;
+  document.querySelectorAll('#r-method button').forEach(b => { b.disabled = !two && b.dataset.v !== 'gauss'; });
+  if (!two && method !== 'gauss') method = 'gauss';
+  setPressed('#r-method', method);
+  $('#r-avail').textContent = two ? '' : 'Na aula, substituição e adição foram usadas em sistemas 2×2. Para 3×3 e 4×4, o método é o escalonamento de Gauss.';
+}
+function buildPlayer(keepOpt){
+  methodAvail(); stopPlay();
+  const sel = $('#r-opt'), wrapO = $('#r-opt-wrap');
+  if (method === 'sub'){
+    const ch = subChoices(S);
+    if (!keepOpt){ sel.innerHTML = ch.map((c, i) => `<option value="${c.k}-${c.v}">${VARS[c.v]} da ${ordinal(c.k)} equação (coef. ${c.c.str()})${i === 0 ? ' · sugerido' : ''}</option>`).join(''); }
+    $('#r-opt-lbl').textContent = 'Isolar'; wrapO.hidden = false;
+    const [k, v] = sel.value.split('-').map(Number); steps = buildSub(S, { k, v });
+  } else if (method === 'add'){
+    const ch = addChoices(S);
+    if (!keepOpt) sel.innerHTML = ch.map((e, i) => `<option value="${e}">cancelar ${VARS[e]}${i === 0 ? ' · sugerido' : ''}</option>`).join('');
+    $('#r-opt-lbl').textContent = 'Estratégia'; wrapO.hidden = false;
+    steps = buildAdd(S, +sel.value);
+  } else { wrapO.hidden = true; steps = buildGauss(S); }
+  $('#p-mini').innerHTML = S.n === 2 ? '' : '';
+  $('#p-list').innerHTML = steps.map((s, i) => `<li><button type="button" data-i="${i}"><span class="n">${String(i + 1).padStart(2, '0')}</span><span>${s.title}</span></button></li>`).join('');
+  show(0);
+}
+function show(i){
+  cur = Math.max(0, Math.min(steps.length - 1, i));
+  const s = steps[cur];
+  $('#p-count').textContent = `Passo ${cur + 1} de ${steps.length} · ${{ sub:'Substituição', add:'Adição ou subtração', gauss:'Escalonamento de Gauss' }[method]}`;
+  $('#p-title').textContent = s.title;
+  const body = $('#p-body'); body.innerHTML = s.body; // reinsere: as animações recomeçam
+  $('#p-note').innerHTML = s.note;
+  $('#p-prog').style.width = ((cur + 1)/steps.length*100) + '%';
+  $('#p-prev').disabled = cur === 0; $('#p-first').disabled = cur === 0;
+  $('#p-next').disabled = cur === steps.length - 1;
+  document.querySelectorAll('#p-list button').forEach((b, k) => { k === cur ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'); b.classList.toggle('done', k < cur); });
+  const act = document.querySelector('#p-list button[aria-current]'); if (act && act.scrollIntoView && playing) act.scrollIntoView({ block:'nearest' });
+}
+function stopPlay(){ playing = false; clearTimeout(playT); $('#p-play').textContent = '▶ Reproduzir'; }
+function tickPlay(){ if (!playing) return; if (cur >= steps.length - 1){ stopPlay(); return; } show(cur + 1); playT = setTimeout(tickPlay, +$('#p-speed').value); }
+$('#p-play').addEventListener('click', () => {
+  if (playing) return stopPlay();
+  playing = true; $('#p-play').textContent = '❚❚ Pausar';
+  if (cur >= steps.length - 1) show(0);
+  playT = setTimeout(tickPlay, +$('#p-speed').value);
+});
+$('#p-next').addEventListener('click', () => { stopPlay(); show(cur + 1); });
+$('#p-prev').addEventListener('click', () => { stopPlay(); show(cur - 1); });
+$('#p-first').addEventListener('click', () => { stopPlay(); show(0); });
+$('#p-list').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stopPlay(); show(+b.dataset.i); });
+$('#r-method').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; method = b.dataset.v; buildPlayer(); });
+$('#r-opt').addEventListener('change', () => buildPlayer(true));
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const r = $('#resolucao').getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+  if (e.key === 'ArrowRight'){ stopPlay(); show(cur + 1); }
+  else if (e.key === 'ArrowLeft'){ stopPlay(); show(cur - 1); }
+});
+
+/* ================= Seção 4: teste ================= */
+let qRight = 0, qTotal = 0, qDone = false;
+function renderQuiz(){
+  qDone = false;
+  $('#q-sys').innerHTML = sysH(S);
+  $('#q-ans').innerHTML = VARS.slice(0, S.n).map(v => `<label><i>${v}</i> = <input type="text" inputmode="decimal" data-v="${v}" aria-label="valor de ${v}"></label>`).join('');
+  const m = $('#q-msg'); m.className = 'msg'; m.textContent = 'Aceita inteiros, decimais e frações, como −3/2.';
+}
+function qResult(ok, txt){
+  if (!qDone){ qTotal++; if (ok) qRight++; qDone = true; }
+  $('#q-score').textContent = `${qRight} de ${qTotal}`;
+  const m = $('#q-msg'); m.className = 'msg ' + (ok ? 'ok' : 'bad'); m.innerHTML = txt;
+}
+$('#q-check').addEventListener('click', () => {
+  const vals = [...document.querySelectorAll('#q-ans input')].map(i => parseQ(i.value));
+  if (vals.some(v => !v)) { const m = $('#q-msg'); m.className = 'msg bad'; m.innerHTML = '<b>Preencha todos os valores</b> com números (inteiros, decimais ou frações).'; return; }
+  if (AN.type !== 'SPD'){ return qResult(false, `<b>Não é bem isso.</b> Este sistema não tem uma solução única: ele é ${AN.type === 'SPI' ? 'possível e indeterminado (infinitas soluções)' : 'impossível (nenhuma solução)'}.`); }
+  const ok = vals.every((v, j) => v.eq(AN.sol[j]));
+  const wrongEq = S.A.findIndex((r, i) => !r.reduce((s, a, j) => s.add(a.mul(vals[j])), Q0).eq(S.b[i]));
+  qResult(ok, ok ? `<b>Correto!</b> ${solH(AN, S.n)}` : `<b>Ainda não.</b> Com esses valores, a ${ordinal(wrongEq)} equação não fecha. Revise as contas ou veja a resolução na seção 3.`);
+});
+$('#q-spi').addEventListener('click', () => qResult(AN.type === 'SPI', AN.type === 'SPI' ? `<b>Correto!</b> ${solH(AN, S.n)}` : `<b>Não.</b> Este sistema ${AN.type === 'SPD' ? 'tem uma única solução' : 'não tem solução'}.`));
+$('#q-si').addEventListener('click', () => qResult(AN.type === 'SI', AN.type === 'SI' ? '<b>Correto!</b> As equações se contradizem: S = ∅.' : `<b>Não.</b> Este sistema ${AN.type === 'SPD' ? 'tem uma única solução' : 'tem infinitas soluções'}.`));
+
+/* ================= Início ================= */
+syncGen(); $('#g-code').value = '';
+setSystem(S);
+})();
+</script>
+</body>
+</html>
