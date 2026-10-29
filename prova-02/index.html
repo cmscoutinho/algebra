@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resolução da Prova de Vetores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Mesmo caderno visual dos laboratórios de Álgebra Linear. Cada questão é uma seção recolhível com um reprodutor de passos animado. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E8ECF1; --ink:#14202B; --muted:#596775; --line:#D2D9E1; --grid:#DCE2E9;
+  --piv:#B86E00; --zero:#12805A; --op:#2F55C8; --sub:#AD2F78; --bad:#C3352B;
+  --f-display:"Syne","Arial Black",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440; --grid:#1F2832;
+    --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440; --grid:#1F2832;
+  --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+:focus-visible{outline:2px solid var(--op);outline-offset:2px}
+.c-op{color:var(--op)} .c-sub{color:var(--sub)} .c-piv{color:var(--piv)} .c-zero{color:var(--zero)} .c-bad{color:var(--bad)}
+
+/* notação */
+.m{font-family:var(--f-math);font-size:1.12em;line-height:1.7;white-space:nowrap}
+.m.wrap{white-space:normal}
+.vec{position:relative;display:inline-block;margin:0 .05em;font-family:var(--f-math);font-style:italic;font-weight:600}
+.vec::before{content:"";position:absolute;left:8%;right:2%;top:-.08em;height:.32em;
+  background:linear-gradient(currentColor,currentColor) left 55%/calc(100% - .25em) 1.3px no-repeat;}
+.vec::after{content:"";position:absolute;right:0;top:-.08em;border-left:.32em solid currentColor;border-top:.16em solid transparent;border-bottom:.16em solid transparent}
+.rad{border-top:1.3px solid currentColor;padding:0 .12em;margin-left:-.05em}
+.nm{font-family:var(--f-math)}
+
+/* cabeçalho */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2.2rem,5.6vw,4.1rem);line-height:.98;letter-spacing:-.02em}
+h1 span{color:var(--op)}
+.lead{font-size:1.06rem;max-width:58ch;margin-top:18px}
+.hero-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;display:grid;gap:8px}
+.hero-box ol{margin:0;padding-left:1.2em;display:grid;gap:4px;font-size:.94rem}
+.lbl{font-family:var(--f-mono);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px;align-items:center}
+nav.toc a{font-family:var(--f-mono);font-size:.76rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+nav.toc .sp{flex:1}
+
+/* seções colapsáveis */
+section{padding-block:clamp(28px,4.5vw,50px);border-top:1px solid var(--line)}
+.sec-top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.sec-head{display:grid;gap:8px;max-width:76ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.45rem,3vw,2.15rem);line-height:1.1;letter-spacing:-.01em}
+.sec-head p{color:var(--muted)}
+.collapse{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.collapse:hover{border-color:var(--ink)}
+.collapse .chev{display:inline-block;transition:transform .25s;font-size:.8rem}
+section.closed .collapse .chev{transform:rotate(-90deg)}
+section.closed{padding-block:18px}
+section.closed .sec-head p{display:none}
+.sec-body{margin-top:22px;display:grid;gap:18px}
+section.closed .sec-body{display:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font:700 1.02rem var(--f-display)}
+.hint{font-size:.88rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+.pts{font:600 .74rem var(--f-mono);padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+
+/* enunciado */
+.stmt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}
+.stmt p+p,.stmt ul{margin-top:8px}
+.stmt ul{padding-left:1.2em;margin-bottom:0}
+.refs{font-size:.86rem;color:var(--muted);background:var(--sunk);border-radius:8px;padding:8px 12px}
+
+/* controles */
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.9rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--op);border-color:var(--op)}
+.btn.sm{font-size:.8rem;padding:5px 9px}
+.btn[aria-pressed="true"]{border-color:var(--op);background:color-mix(in srgb,var(--op) 12%,var(--surface))}
+select,input[type=text],input[type=number]{font:inherit;font-size:.92rem;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+input[type=number]{width:62px;text-align:center;font-family:var(--f-math)}
+.bad-input{border-color:var(--bad)!important}
+
+/* reprodutor */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.steps button{font-size:.82rem;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.steps button .n{font:600 .7rem var(--f-mono)}
+.steps button.done{color:var(--ink)}
+.steps button[aria-current="step"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.ptitle{font:700 1.22rem var(--f-display)}
+.pcount{font:600 .76rem var(--f-mono);color:var(--muted)}
+.progress{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--op);transition:width .3s}
+.pgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.pstage{background:var(--sunk);border-radius:10px;padding:8px;display:flex;justify-content:center;align-items:center;min-height:300px;position:relative}
+.pstage svg{width:100%;max-width:480px;height:auto;display:block;user-select:none;-webkit-user-select:none}
+.pside{display:grid;gap:12px;align-content:start}
+.pcalc{display:grid;gap:4px;background:var(--sunk);border-radius:10px;padding:12px 14px;min-height:90px}
+.cl{font-family:var(--f-math);font-size:1.1rem;line-height:1.55}
+.cl .why{font:400 .82rem var(--f-body);color:var(--muted);margin-left:6px}
+.cl.res{font-weight:600}
+.pnote{font-size:.97rem;padding:10px 12px;border-left:3px solid var(--op);background:color-mix(in srgb,var(--op) 7%,transparent);border-radius:0 8px 8px 0}
+.pnote b{font-weight:600}
+.verdict{display:inline-block;font:700 .82rem var(--f-mono);padding:2px 10px;border-radius:999px;vertical-align:middle}
+.verdict.yes{background:color-mix(in srgb,var(--zero) 18%,transparent);color:var(--zero)}
+.verdict.no{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.a{animation:ain .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*260ms)}
+@keyframes ain{from{opacity:0;transform:translateY(8px)}}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+
+/* svg */
+svg text{font-family:var(--f-body)}
+.gl{stroke:var(--grid);stroke-width:1}
+.ax{stroke:var(--muted);stroke-width:1.4}
+.tk{font:500 10px var(--f-mono);fill:var(--muted)}
+.lb{font:italic 600 16px var(--f-math)}
+.lbs{font:500 12px var(--f-mono)}
+.draw line,.draw polyline,.draw path.d,line.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw var(--dur,800ms) cubic-bezier(.45,0,.2,1) forwards;animation-delay:var(--d,0ms)}
+.draw .hd{opacity:0;animation:fin .2s forwards;animation-delay:calc(var(--d,0ms) + var(--dur,800ms) - 140ms)}
+.fade{opacity:0;animation:fin .5s forwards;animation-delay:var(--d,0ms)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fin{to{opacity:1}}
+.rot{animation:spin .22s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.drag{cursor:grab;touch-action:pan-y}
+.drag:active{cursor:grabbing}
+.handle{cursor:grab}
+
+/* tabela q1 */
+.tbl{width:100%;border-collapse:collapse;font-size:.95rem}
+.tbl th,.tbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:center}
+.tbl th{font:600 .72rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tbl td{font-family:var(--f-math);font-size:1.05rem}
+.tbl tr.curr td{background:color-mix(in srgb,var(--sub) 10%,transparent)}
+.tbl td.pend{color:transparent}
+.tbl td.fill{animation:fin .6s both}
+.tblwrap{overflow-x:auto}
+
+/* laboratórios */
+.lab{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.readout{display:grid;gap:4px;background:var(--sunk);border-radius:10px;padding:12px 14px}
+.coordin{display:grid;grid-template-columns:auto repeat(3,auto);gap:6px 8px;align-items:center;justify-content:start}
+
+/* gabarito */
+.ans{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.ans .card ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:980px){ .pgrid,.lab{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:720px){ .hero,.stmt{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+  .draw line,.draw polyline,.draw path.d,line.draw{stroke-dasharray:none;stroke-dashoffset:0}
+  .draw .hd,.fade{opacity:1}
+}
+</style>
+</head>
+<body style="margin:0">
+
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Álgebra Linear · 1º bimestre · Prova escrita de 22/10/2026</div>
+    <h1>Resolução da prova de <span>Vetores</span></h1>
+    <p class="lead">Cada questão é resolvida passo a passo, com animações que mostram o que cada conta significa. Avance pelos botões, pelas setas do teclado ou deixe reproduzir sozinho. No fim de cada questão há um laboratório para testar outros valores.</p>
+  </div>
+  <div class="hero-box">
+    <span class="lbl">Questões · 5,0 pontos</span>
+    <ol>
+      <li>Robô aspirador: produto escalar e ângulo <span class="pts">2,0</span></li>
+      <li>Barras 3D: módulo, produto escalar e paralelogramo <span class="pts">2,0</span></li>
+      <li>Drone: regra do polígono e distância <span class="pts">1,0</span></li>
+    </ol>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Questões">
+    <a href="#q1">Questão 1</a><a href="#q2">Questão 2</a><a href="#q3">Questão 3</a><a href="#gabarito">Gabarito resumido</a>
+    <span class="sp"></span>
+    <button class="btn sm" id="all-close" type="button">Recolher todas</button>
+    <button class="btn sm" id="all-open" type="button">Mostrar todas</button>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ============ Q1 ============ -->
+<section id="q1" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">QUESTÃO 1 · 2,0 PONTOS</span><h2>O robô aspirador e o cone de 45°</h2><p>Decidir se um obstáculo é visto é decidir se o ângulo entre dois vetores é pequeno o bastante. O produto escalar dá esse ângulo.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder questão</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card stmt">
+      <div>
+        <p>Um robô aspirador está voltado para a direção <span class="m"><span class="vec">f</span> = (2, 1)</span>. Seu sensor frontal só detecta um obstáculo quando o vetor que liga o robô ao obstáculo forma com <span class="vec">f</span> um ângulo de, <b>no máximo, 45°</b>. Os vetores do robô até cinco obstáculos são:</p>
+        <p class="m wrap"><span class="vec">A</span> = (1, 3); <span class="vec">B</span> = (−1, 2); <span class="vec">C</span> = (−4, −2); <span class="vec">D</span> = (3, 4); <span class="vec">E</span> = (4, −3)</p>
+        <p>Complete a tabela com o produto escalar com <span class="vec">f</span>, o cosseno do ângulo θ e se o obstáculo é detectado.</p>
+      </div>
+      <div class="refs"><b>Valores de referência</b><br>cos 0° = 1 · cos 30° ≈ 0,87<br>cos 45° ≈ 0,71 · cos 60° = 0,5<br>cos 90° = 0 · cos 180° = −1<br>√2 ≈ 1,41 · √5 ≈ 2,24 · √10 ≈ 3,16</div>
+    </div>
+    <div class="card player" id="p1"></div>
+    <div class="card">
+      <h3>A tabela, preenchida conforme a resolução avança</h3>
+      <div class="tblwrap"><table class="tbl" id="q1-table">
+        <thead><tr><th>Obstáculo</th><th>Vetor</th><th>Produto escalar</th><th>cos θ</th><th>θ</th><th>Detectado?</th></tr></thead><tbody></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="row spread"><h3>Laboratório: arraste o obstáculo</h3><div class="row"><span class="lbl">Ir para</span><span id="l1-go" class="row"></span></div></div>
+      <div class="lab">
+        <div class="pstage" id="l1-stage"></div>
+        <div class="pside">
+          <div class="readout" id="l1-out"></div>
+          <label class="row hint"><input type="checkbox" id="l1-snap" checked> <span>Prender aos pontos inteiros da grade</span></label>
+          <p class="hint">Arraste o ponto rosa (ou toque no plano). Repare: o sinal do produto escalar já diz se o obstáculo está à frente (positivo), ao lado (zero) ou atrás (negativo) do robô.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Q2 ============ -->
+<section id="q2" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">QUESTÃO 2 · 2,0 PONTOS</span><h2>Duas barras saindo do mesmo nó</h2><p>Módulo é comprimento, o produto escalar mede o ângulo, e a soma e a diferença são as duas diagonais do paralelogramo. Arraste a figura para girar a estrutura em 3D.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder questão</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card stmt">
+      <div>
+        <p>Duas barras partem do mesmo nó e são representadas pelos vetores <span class="m"><span class="vec">u</span> = (1, 2, 2)</span> e <span class="m"><span class="vec">v</span> = (2, −2, 1)</span>, em metros.</p>
+        <p><b>a)</b> Calcule <span class="m">‖<span class="vec">u</span>‖</span>, <span class="m">‖<span class="vec">v</span>‖</span>, <span class="m"><span class="vec">u</span> · <span class="vec">v</span></span> e <span class="m">‖<span class="vec">u</span> + <span class="vec">v</span>‖</span>. <span class="pts">1,1</span></p>
+        <p><b>b)</b> Classifique como verdadeira (V) ou falsa (F) e justifique: <span class="pts">0,9</span></p>
+        <ul>
+          <li>I. As barras formam um ângulo reto entre si.</li>
+          <li>II. Trocar o sinal de uma das coordenadas de um vetor altera o seu módulo.</li>
+          <li>III. <span class="m">‖<span class="vec">u</span> − <span class="vec">v</span>‖ = ‖<span class="vec">u</span> + <span class="vec">v</span>‖</span>: as duas diagonais do paralelogramo têm o mesmo comprimento.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card player" id="p2"></div>
+    <div class="card">
+      <h3>Laboratório: escolha outras duas barras</h3>
+      <div class="lab">
+        <div class="pstage" id="l2-stage"></div>
+        <div class="pside">
+          <div class="coordin" id="l2-in">
+            <span></span><span class="lbl">x</span><span class="lbl">y</span><span class="lbl">z</span>
+            <span class="nm c-op"><span class="vec">u</span></span><input type="number" step="1" data-k="u0" value="1" aria-label="u x"><input type="number" step="1" data-k="u1" value="2" aria-label="u y"><input type="number" step="1" data-k="u2" value="2" aria-label="u z">
+            <span class="nm c-sub"><span class="vec">v</span></span><input type="number" step="1" data-k="v0" value="2" aria-label="v x"><input type="number" step="1" data-k="v1" value="-2" aria-label="v y"><input type="number" step="1" data-k="v2" value="1" aria-label="v z">
+          </div>
+          <div class="row"><button class="btn sm" type="button" id="l2-prova">Valores da prova</button><button class="btn sm" type="button" id="l2-rand">Sortear</button><button class="btn sm" type="button" id="l2-reset">Vista inicial</button></div>
+          <div class="readout" id="l2-out"></div>
+          <p class="hint">Use valores de −5 a 5. Arraste a figura para girar. Teste um par perpendicular e um que não seja: as diagonais só ficam iguais quando <span class="m"><span class="vec">u</span> · <span class="vec">v</span> = 0</span>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Q3 ============ -->
+<section id="q3" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">QUESTÃO 3 · 1,0 PONTO</span><h2>O drone de entregas e a regra do polígono</h2><p>Somar deslocamentos é encaixar flechas: cada uma começa onde a anterior terminou. A soma liga o começo da primeira ao fim da última.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder questão</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card stmt">
+      <div>
+        <p>Um drone parte da base, na origem (eixo <i>x</i> para o leste, eixo <i>y</i> para o norte, unidades em km), e faz três deslocamentos consecutivos até o ponto de entrega:</p>
+        <p class="m wrap"><span class="vec">d<sub>1</sub></span> = (4, 2); <span class="vec">d<sub>2</sub></span> = (−1, 5); <span class="vec">d<sub>3</sub></span> = (3, 1)</p>
+        <p><b>a)</b> Desenhe a sequência pela <b>regra do polígono</b>, indicando as coordenadas do ponto de entrega. <span class="pts">0,5</span></p>
+        <p><b>b)</b> Determine a distância em linha reta entre a base e o ponto de entrega. <span class="pts">0,5</span></p>
+      </div>
+    </div>
+    <div class="card player" id="p3"></div>
+    <div class="card">
+      <h3>Laboratório: mude a ordem dos deslocamentos</h3>
+      <div class="lab">
+        <div class="pstage" id="l3-stage"></div>
+        <div class="pside">
+          <span class="lbl">Ordem dos deslocamentos</span>
+          <div class="row" id="l3-orders"></div>
+          <button class="btn btn-primary" type="button" id="l3-fly">▶ Voar de novo</button>
+          <div class="readout" id="l3-out"></div>
+          <p class="hint">A soma de vetores é comutativa: qualquer ordem leva ao mesmo ponto de entrega. O caminho muda, mas o comprimento total do caminho também é o mesmo, porque os três trechos são os mesmos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GABARITO ============ -->
+<section id="gabarito" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">RESUMO</span><h2>Gabarito resumido</h2><p>As respostas finais de cada item, para conferência rápida.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="ans">
+      <div class="card"><h3>Questão 1</h3>
+        <div class="tblwrap"><table class="tbl" id="gab1"><thead><tr><th></th><th><span class="vec">f</span>·X</th><th>cos θ</th><th>Detecta?</th></tr></thead><tbody></tbody></table></div>
+        <p class="hint">A fica exatamente na borda (θ = 45°) e é detectado, porque o limite é "no máximo 45°".</p>
+      </div>
+      <div class="card"><h3>Questão 2</h3>
+        <ul>
+          <li><span class="m">‖<span class="vec">u</span>‖ = 3 m</span>, <span class="m">‖<span class="vec">v</span>‖ = 3 m</span></li>
+          <li><span class="m"><span class="vec">u</span> · <span class="vec">v</span> = 0</span></li>
+          <li><span class="m">‖<span class="vec">u</span> + <span class="vec">v</span>‖ = √18 = 3√2 ≈ 4,24 m</span></li>
+          <li><b>I. V</b>: <span class="m"><span class="vec">u</span> · <span class="vec">v</span> = 0</span>, logo θ = 90°.</li>
+          <li><b>II. F</b>: as coordenadas entram ao quadrado no módulo, e (−a)² = a².</li>
+          <li><b>III. V</b>: <span class="m"><span class="vec">u</span> − <span class="vec">v</span> = (−1, 4, 1)</span> e <span class="m">‖<span class="vec">u</span> − <span class="vec">v</span>‖ = √18</span>; o paralelogramo é um retângulo (aqui, um quadrado).</li>
+        </ul>
+      </div>
+      <div class="card"><h3>Questão 3</h3>
+        <ul>
+          <li>Pontos do polígono: (0, 0) → (4, 2) → (3, 7) → (6, 8).</li>
+          <li><b>a)</b> Ponto de entrega: <span class="m">(6, 8)</span>.</li>
+          <li><b>b)</b> <span class="m">√(6² + 8²) = √100 = 10 km</span>.</li>
+          <li class="hint">O caminho voado tem ≈ 12,73 km; a pergunta pede a distância em linha reta.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Resolução comentada da prova escrita de Vetores (Álgebra Linear, 1º bimestre). Ilustrações desenhadas na própria página.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let UID = 0; const uid = () => 'g' + (++UID);
+
+/* ---------- formatação ---------- */
+const fmt = (x, d = 2) => { const r = Math.round(x * 10 ** d) / 10 ** d; const s = (Math.abs(r) < 1e-12 ? 0 : r).toFixed(d).replace('.', ','); return s.startsWith('-') ? '−' + s.slice(1) : s; };
+const fmtT = (x, d = 2) => fmt(x, d).replace(/,?0+$/, '') || '0';
+const I = x => (x < 0 ? '−' + Math.abs(x) : String(x));
+const IP = x => (x < 0 ? `(−${Math.abs(x)})` : String(x));
+const N1 = x => (x < 0 ? `(${fmtT(x, 1)})` : fmtT(x, 1));
+const V = n => `<span class="vec">${n}</span>`;
+const SQ = s => `√<span class="rad">${s}</span>`;
+const vecS = v => `(${v.map(I).join(', ')})`;
+const dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
+const norm = a => Math.sqrt(dot(a, a));
+const deg = r => r * 180 / Math.PI;
+const easeIO = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+function tween(ms, fn, delay = 0){
+  if (reduce){ fn(1); return () => {}; }
+  let id, t0 = null, stop = false;
+  const f = t => { if (stop) return; if (t0 === null) t0 = t; const k = Math.min(1, Math.max(0, (t - t0 - delay) / ms)); fn(easeIO(k)); if (k < 1) id = requestAnimationFrame(f); };
+  id = requestAnimationFrame(f);
+  return () => { stop = true; cancelAnimationFrame(id); };
+}
+
+/* ---------- SVG ---------- */
+function arrow(x1, y1, x2, y2, col, o = {}){
+  const w = o.w || 3, h = o.h || 12, a = Math.atan2(y2 - y1, x2 - x1), L = Math.hypot(x2 - x1, y2 - y1);
+  const e = Math.min(h * .75, L * .5), lx = x2 - Math.cos(a) * e, ly = y2 - Math.sin(a) * e;
+  const p = t => [x2 - h * Math.cos(a + t), y2 - h * Math.sin(a + t)];
+  const [ax, ay] = p(.42), [bx, by] = p(-.42);
+  return `<g class="${o.cls || ''}" style="--d:${o.d || 0}ms;--dur:${o.dur || 800}ms"${o.op != null ? ` opacity="${o.op}"` : ''}><line x1="${x1}" y1="${y1}" x2="${lx}" y2="${ly}" pathLength="1" stroke-linecap="round" style="stroke:${col};stroke-width:${w}" ${o.dash ? 'stroke-dasharray="6 5"' : ''}/><polygon class="hd" points="${x2},${y2} ${ax},${ay} ${bx},${by}" style="fill:${col}"/></g>`;
+}
+const seg = (x1, y1, x2, y2, col, o = {}) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="1" class="${o.cls || ''}" style="stroke:${col};stroke-width:${o.w || 1.5};--d:${o.d || 0}ms;--dur:${o.dur || 700}ms" ${o.dash ? 'stroke-dasharray="5 4"' : ''} stroke-linecap="round"/>`;
+const txt = (x, y, s, col, cls = 'lb', o = {}) => `<text x="${x}" y="${y}" class="${cls}${o.fade ? ' fade' : ''}" text-anchor="${o.anchor || 'middle'}" dominant-baseline="middle" style="fill:${col};--d:${o.d || 0}ms"${o.halo ? ' paint-order="stroke" stroke="var(--sunk)" stroke-width="4"' : ''}>${s}</text>`;
+class Plane {
+  constructor(o){ Object.assign(this, o); this.W = (this.xmax - this.xmin) * this.u + 2 * this.pad; this.H = (this.ymax - this.ymin) * this.u + 2 * this.pad; }
+  X(x){ return +(this.pad + (x - this.xmin) * this.u).toFixed(2); }
+  Y(y){ return +(this.pad + (this.ymax - y) * this.u).toFixed(2); }
+  open(extra = ''){ return `<svg viewBox="0 0 ${this.W} ${this.H}" ${extra}>`; }
+  grid(o = {}){
+    let h = '';
+    for (let x = this.xmin; x <= this.xmax; x++) h += `<line class="gl" x1="${this.X(x)}" y1="${this.Y(this.ymin)}" x2="${this.X(x)}" y2="${this.Y(this.ymax)}"/>`;
+    for (let y = this.ymin; y <= this.ymax; y++) h += `<line class="gl" x1="${this.X(this.xmin)}" y1="${this.Y(y)}" x2="${this.X(this.xmax)}" y2="${this.Y(y)}"/>`;
+    h += `<line class="ax" x1="${this.X(this.xmin)}" y1="${this.Y(0)}" x2="${this.X(this.xmax)}" y2="${this.Y(0)}"/><line class="ax" x1="${this.X(0)}" y1="${this.Y(this.ymin)}" x2="${this.X(0)}" y2="${this.Y(this.ymax)}"/>`;
+    for (let x = this.xmin; x <= this.xmax; x++) if (x) h += `<text class="tk" x="${this.X(x)}" y="${this.Y(0) + 11}" text-anchor="middle">${I(x)}</text>`;
+    for (let y = this.ymin; y <= this.ymax; y++) if (y) h += `<text class="tk" x="${this.X(0) - 5}" y="${this.Y(y) + 3}" text-anchor="end">${I(y)}</text>`;
+    if (o.xl) h += `<text class="tk" x="${this.X(this.xmax) - 2}" y="${this.Y(0) - 8}" text-anchor="end">${o.xl}</text>`;
+    if (o.yl) h += `<text class="tk" x="${this.X(0) + 6}" y="${this.Y(this.ymax) + 8}" text-anchor="start">${o.yl}</text>`;
+    return h;
+  }
+}
+
+/* ---------- reprodutor de passos ---------- */
+const players = [];
+class Player {
+  constructor(root, steps, name){
+    this.root = root; this.steps = steps; this.cur = 0; this.cancels = []; this.playing = false; this.timer = null; this.name = name;
+    root.innerHTML = `
+      <ol class="steps"></ol>
+      <div class="row spread"><span class="pcount"></span></div>
+      <h3 class="ptitle"></h3>
+      <div class="progress"><i></i></div>
+      <div class="pgrid"><div class="pstage"></div><div class="pside"><div class="pcalc"></div><p class="pnote"></p><div class="pextra"></div></div></div>
+      <div class="ctrl">
+        <div class="row">
+          <button class="btn" type="button" data-a="first" aria-label="Primeiro passo">⏮</button>
+          <button class="btn" type="button" data-a="prev">← Anterior</button>
+          <button class="btn btn-primary" type="button" data-a="play">▶ Reproduzir</button>
+          <button class="btn" type="button" data-a="next">Próximo →</button>
+          <button class="btn" type="button" data-a="replay" aria-label="Repetir animação do passo">↻ Repetir</button>
+        </div>
+        <label class="row"><span class="lbl">Ritmo</span><select data-a="speed"><option value="7500">calmo</option><option value="5200" selected>normal</option><option value="3400">rápido</option></select></label>
+      </div>`;
+    this.$ = s => root.querySelector(s);
+    this.$('.steps').innerHTML = steps.map((s, i) => `<li><button type="button" data-i="${i}"><span class="n">${i + 1}</span>${s.short || s.title}</button></li>`).join('');
+    this.$('.steps').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ this.stop(); this.show(+b.dataset.i); } });
+    root.querySelector('.ctrl').addEventListener('click', e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return;
+      if (a === 'play') return this.playing ? this.stop() : this.play();
+      this.stop();
+      if (a === 'first') this.show(0); if (a === 'prev') this.show(this.cur - 1); if (a === 'next') this.show(this.cur + 1); if (a === 'replay') this.show(this.cur);
+    });
+    players.push(this);
+    this.show(0);
+  }
+  show(i){
+    this.cancels.forEach(c => c()); this.cancels = [];
+    this.cur = Math.max(0, Math.min(this.steps.length - 1, i));
+    const s = this.steps[this.cur];
+    this.$('.pcount').textContent = `Passo ${this.cur + 1} de ${this.steps.length} · ${this.name}`;
+    this.$('.ptitle').innerHTML = s.title;
+    this.$('.progress i').style.width = ((this.cur + 1) / this.steps.length * 100) + '%';
+    this.$('.pcalc').innerHTML = (s.calc || []).map((l, k) => `<div class="cl a${typeof l === 'object' && l.res ? ' res' : ''}" style="--i:${k + (s.calcDelay || 0)}">${typeof l === 'object' ? l.h : l}</div>`).join('') || '<div class="hint">Observe a figura.</div>';
+    this.$('.pnote').innerHTML = s.note || '';
+    this.$('.pextra').innerHTML = s.extra ? s.extra() : '';
+    this.$('[data-a="prev"]').disabled = this.$('[data-a="first"]').disabled = this.cur === 0;
+    this.$('[data-a="next"]').disabled = this.cur === this.steps.length - 1;
+    $$('.steps button', this.root).forEach((b, k) => { k === this.cur ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'); b.classList.toggle('done', k < this.cur); });
+    s.scene(this.$('.pstage'), this);
+    if (s.after) s.after(this);
+  }
+  play(){ this.playing = true; this.$('[data-a="play"]').textContent = '❚❚ Pausar'; if (this.cur >= this.steps.length - 1) this.show(0); this.timer = setTimeout(() => this.tick(), +this.$('[data-a="speed"]').value); }
+  tick(){ if (!this.playing) return; if (this.cur >= this.steps.length - 1) return this.stop(); this.show(this.cur + 1); this.timer = setTimeout(() => this.tick(), +this.$('[data-a="speed"]').value); }
+  stop(){ this.playing = false; clearTimeout(this.timer); this.$('[data-a="play"]').textContent = '▶ Reproduzir'; }
+}
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, select, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const mid = innerHeight / 2;
+  const p = players.find(p => { const sec = p.root.closest('section'); if (sec.classList.contains('closed')) return false; const r = p.root.getBoundingClientRect(); return r.top < mid && r.bottom > mid; })
+    || players.find(p => { const r = p.root.getBoundingClientRect(); return !p.root.closest('section').classList.contains('closed') && r.top < innerHeight && r.bottom > 0; });
+  if (!p) return;
+  p.stop(); p.show(p.cur + (e.key === 'ArrowRight' ? 1 : -1));
+});
+
+/* ---------- seções recolhíveis ---------- */
+const SKEY = 'prova-vetores-secoes';
+let closedSet = new Set(); try { closedSet = new Set(JSON.parse(localStorage.getItem(SKEY) || '[]')); } catch (_) {}
+function setSec(sec, open){
+  sec.classList.toggle('closed', !open);
+  const b = sec.querySelector('.collapse'), word = sec.id === 'gabarito' ? 'seção' : 'questão';
+  b.setAttribute('aria-expanded', String(open)); b.querySelector('.ct').textContent = (open ? 'Esconder ' : 'Mostrar ') + word;
+  if (open) closedSet.delete(sec.id); else closedSet.add(sec.id);
+  try { localStorage.setItem(SKEY, JSON.stringify([...closedSet])); } catch (_) {}
+  if (!open) players.forEach(p => { if (sec.contains(p.root)) p.stop(); });
+}
+$$('[data-sec]').forEach(sec => {
+  sec.querySelector('.collapse').addEventListener('click', () => {
+    const opening = sec.classList.contains('closed'); setSec(sec, opening);
+    if (opening) players.forEach(p => { if (sec.contains(p.root)) p.show(p.cur); });
+  });
+  if (closedSet.has(sec.id)) setSec(sec, false);
+});
+$('#all-close').addEventListener('click', () => $$('[data-sec]').forEach(s => setSec(s, false)));
+$('#all-open').addEventListener('click', () => { $$('[data-sec]').forEach(s => setSec(s, true)); players.forEach(p => p.show(p.cur)); });
+$$('nav.toc a').forEach(a => a.addEventListener('click', () => { const s = document.querySelector(a.getAttribute('href')); if (s && s.classList.contains('closed')){ setSec(s, true); players.forEach(p => { if (s.contains(p.root)) p.show(p.cur); }); } }));
+
+/* =====================================================================
+   QUESTÃO 1
+   ===================================================================== */
+const F = [2, 1], NF2 = 5, COS45 = Math.SQRT1_2;
+const OBS = [
+  { k:'A', v:[1, 3] }, { k:'B', v:[-1, 2] }, { k:'C', v:[-4, -2] }, { k:'D', v:[3, 4] }, { k:'E', v:[4, -3] },
+].map(o => { const d = dot(F, o.v), n2 = dot(o.v, o.v), c = d / Math.sqrt(NF2 * n2); return { ...o, d, n2, c, th:deg(Math.acos(Math.max(-1, Math.min(1, c)))), det:c >= COS45 - 1e-9 }; });
+const PL1 = new Plane({ xmin:-5, xmax:5, ymin:-4, ymax:5, u:34, pad:20 });
+const AF = Math.atan2(1, 2);
+function robotSVG(pl){ const x = pl.X(0), y = pl.Y(0); return `<g><circle cx="${x}" cy="${y}" r="13" style="fill:var(--ink)"/><circle cx="${x}" cy="${y}" r="9" style="fill:none;stroke:var(--surface);stroke-width:1.2;opacity:.5"/><circle cx="${x + 7 * Math.cos(AF)}" cy="${y - 7 * Math.sin(AF)}" r="2.6" style="fill:var(--piv)"/></g>`; }
+function coneSVG(pl, o = {}){
+  const id = uid(), R = 14, pts = [[pl.X(0), pl.Y(0)]];
+  for (let k = 0; k <= 48; k++){ const a = AF - Math.PI / 4 + k * (Math.PI / 2) / 48; pts.push([pl.X(R * Math.cos(a)), pl.Y(R * Math.sin(a))]); }
+  const e1 = [pl.X(9 * Math.cos(AF - Math.PI / 4)), pl.Y(9 * Math.sin(AF - Math.PI / 4))], e2 = [pl.X(9 * Math.cos(AF + Math.PI / 4)), pl.Y(9 * Math.sin(AF + Math.PI / 4))];
+  return `<defs><clipPath id="${id}"><rect x="${pl.pad}" y="${pl.pad}" width="${pl.W - 2 * pl.pad}" height="${pl.H - 2 * pl.pad}"/></clipPath></defs>
+    <g clip-path="url(#${id})" class="${o.fade ? 'fade' : ''}" style="--d:${o.d || 0}ms"><polygon points="${pts.map(p => p.join(',')).join(' ')}" style="fill:var(--piv);opacity:.13"/>
+    <line x1="${pl.X(0)}" y1="${pl.Y(0)}" x2="${e1[0]}" y2="${e1[1]}" style="stroke:var(--piv);stroke-width:1.3" stroke-dasharray="5 4"/>
+    <line x1="${pl.X(0)}" y1="${pl.Y(0)}" x2="${e2[0]}" y2="${e2[1]}" style="stroke:var(--piv);stroke-width:1.3" stroke-dasharray="5 4"/></g>`;
+}
+function arcPts(pl, a1, a2, r){ const pts = []; for (let k = 0; k <= 36; k++){ const a = a1 + (a2 - a1) * k / 36; pts.push(`${pl.X(r * Math.cos(a))},${pl.Y(r * Math.sin(a))}`); } return pts.join(' '); }
+function angleArc(pl, v, col, label, o = {}){
+  const a = Math.atan2(v[1], v[0]); let d = a - AF; while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+  const r = o.r || 1.25, mid = AF + d / 2, lr = r + .75;
+  return `<g class="${o.anim ? 'draw' : ''}" style="--d:${o.d || 0}ms;--dur:700ms"><polyline points="${arcPts(pl, AF, AF + d, r)}" pathLength="1" style="fill:none;stroke:${col};stroke-width:2"/></g>` +
+    (label ? txt(pl.X(lr * Math.cos(mid)), pl.Y(lr * Math.sin(mid)), label, col, 'lbs', { fade:o.anim, d:(o.d || 0) + 600, halo:true }) : '');
+}
+function obsSVG(pl, o, col, opt = {}){
+  const x = pl.X(o.v[0]), y = pl.Y(o.v[1]), lab = `${o.k} ${vecS(o.v)}`;
+  const far = o.v[0] <= -3, dx = o.v[0] >= 0 || far ? 10 : -10, anchor = o.v[0] >= 0 || far ? 'start' : 'end', dy = far ? 16 : -12;
+  return arrow(pl.X(0), pl.Y(0), x, y, col, { cls:opt.anim ? 'draw' : '', d:opt.d, w:opt.w || 2.6, op:opt.op }) +
+    `<g${opt.op != null ? ` opacity="${opt.op}"` : ''} class="${opt.anim ? 'fade' : ''}" style="--d:${(opt.d || 0) + 500}ms"><circle cx="${x}" cy="${y}" r="5" style="fill:${col}"/>${txt(x + dx, y + dy, lab, col, 'lbs', { anchor, halo:true })}</g>`;
+}
+const fArrow = (pl, o = {}) => arrow(pl.X(0), pl.Y(0), pl.X(2), pl.Y(1), 'var(--op)', { cls:o.anim ? 'draw' : '', d:o.d, w:3.4 }) + txt(pl.X(2) + 8, pl.Y(1) + 14, 'f = (2, 1)', 'var(--op)', 'lbs', { anchor:'start', halo:true, fade:o.anim, d:(o.d || 0) + 700 });
+function q1Scene(content){ return st => { st.innerHTML = PL1.open('role="img" aria-label="Plano com o robô na origem, o cone de detecção e os vetores"') + PL1.grid() + content() + '</svg>'; }; }
+// régua do cosseno
+function gauge(c, o = {}){
+  const W = 320, x = v => 18 + (v + 1) / 2 * (W - 36);
+  const marks = [[-1, '−1', '180°'], [0, '0', '90°'], [.5, '0,5', '60°'], [COS45, '0,71', '45°'], [1, '1', '0°']];
+  let h = `<svg viewBox="0 0 ${W} 74" style="width:100%;max-width:360px;display:block"><text class="tk" x="${W / 2}" y="9" text-anchor="middle">régua do cosseno (θ entre 0° e 180°)</text>
+    <rect x="${x(-1)}" y="30" width="${x(1) - x(-1)}" height="8" rx="4" style="fill:var(--line)"/>
+    <rect x="${x(COS45)}" y="30" width="${x(1) - x(COS45)}" height="8" rx="4" style="fill:var(--zero);opacity:.8"/>`;
+  marks.forEach(([v, s, a]) => { h += `<line x1="${x(v)}" y1="27" x2="${x(v)}" y2="41" style="stroke:var(--muted)"/><text class="tk" x="${x(v)}" y="52" text-anchor="middle">${s}</text><text class="tk" x="${x(v)}" y="65" text-anchor="middle" style="fill:var(--ink)">${a}</text>`; });
+  if (c != null){
+    const col = c >= COS45 - 1e-9 ? 'var(--zero)' : 'var(--bad)';
+    h += `<g class="gm" style="--from:${x(1) - x(c)}px"><polygon points="${x(c)},28 ${x(c) - 6},17 ${x(c) + 6},17" style="fill:${col}"/></g>`;
+  }
+  return h + `</svg><style>.gm{animation:gslide 1.1s cubic-bezier(.3,0,.2,1) both;animation-delay:${o.d || 900}ms}@keyframes gslide{from{transform:translateX(var(--from))}}</style>`;
+}
+function q1Steps(){
+  const steps = [];
+  steps.push({ short:'Zona de detecção', title:'Desenhando a situação',
+    note:'O robô está na origem e olha na direção de <b class="c-op">f</b>. A zona de detecção é uma fatia de 45° para cada lado de <span class="vec c-op">f</span>. Um obstáculo é visto quando o ângulo θ entre <span class="vec c-op">f</span> e o vetor até ele é no máximo 45°.',
+    calc:['Detecta ⇔ θ ≤ 45°'],
+    scene:q1Scene(() => coneSVG(PL1, { fade:true }) + fArrow(PL1, { anim:true, d:300 }) + robotSVG(PL1)) });
+  steps.push({ short:'Ângulo → cosseno', title:'Trocar o ângulo pelo cosseno',
+    note:'Não precisamos medir o ângulo com transferidor. Entre 0° e 180°, quanto <b>maior</b> o ângulo, <b>menor</b> o cosseno. Então "θ no máximo 45°" vira "cos θ no mínimo cos 45° ≈ 0,71": a faixa verde da régua.',
+    calc:['θ ≤ 45°', '⇔ cos θ ≥ cos 45°', { h:'⇔ cos θ ≥ 0,71', res:true }],
+    extra:() => gauge(null),
+    scene:q1Scene(() => coneSVG(PL1) + fArrow(PL1) + robotSVG(PL1) + angleArc(PL1, [Math.cos(AF + Math.PI / 4), Math.sin(AF + Math.PI / 4)], 'var(--piv)', '45°', { anim:true, r:2.1 }) + angleArc(PL1, [Math.cos(AF - Math.PI / 4), Math.sin(AF - Math.PI / 4)], 'var(--piv)', '45°', { anim:true, r:2.1, d:300 })) });
+  steps.push({ short:'A fórmula', title:'A fórmula do cosseno e o módulo de f',
+    note:'O cosseno do ângulo entre dois vetores é o produto escalar dividido pelo produto dos módulos. O módulo de <span class="vec c-op">f</span> vale para todas as linhas da tabela, então calculamos uma vez só.',
+    calc:[`cos θ = ${V('f')} · ${V('X')} ÷ (‖${V('f')}‖ · ‖${V('X')}‖)`, `${V('f')} · ${V('X')} = 2·x + 1·y`, { h:`‖${V('f')}‖ = ${SQ('2² + 1²')} = ${SQ('5')} ≈ 2,24`, res:true }],
+    scene:q1Scene(() => coneSVG(PL1) + fArrow(PL1) + robotSVG(PL1) +
+      seg(PL1.X(0), PL1.Y(0), PL1.X(2), PL1.Y(0), 'var(--op)', { dash:true, cls:'draw', d:300 }) + seg(PL1.X(2), PL1.Y(0), PL1.X(2), PL1.Y(1), 'var(--op)', { dash:true, cls:'draw', d:900 }) +
+      txt(PL1.X(1), PL1.Y(0) + 12, '2', 'var(--op)', 'lbs', { fade:true, d:700 }) + txt(PL1.X(2) + 10, PL1.Y(.5), '1', 'var(--op)', 'lbs', { fade:true, d:1300 }) +
+      txt(PL1.X(.6), PL1.Y(1.15), '√5', 'var(--op)', 'lbs', { fade:true, d:1700, halo:true })) });
+  const info = {
+    A:{ calc:o => [`${V('f')} · ${V('A')} = 2·1 + 1·3 = <b>5</b>`, `‖${V('A')}‖ = ${SQ('1² + 3²')} = ${SQ('10')} ≈ 3,16`, `cos θ = 5 ÷ (${SQ('5')} · ${SQ('10')}) = 5 ÷ ${SQ('50')} ≈ <b>0,71</b>`, { h:`0,71 ≥ 0,71 → θ = 45° <span class="verdict yes">S</span>`, res:true }],
+      note:'Produto escalar positivo: A está à frente. O cosseno dá exatamente o de 45° (5 ÷ √50 = √2 ÷ 2): A está <b>na borda</b> do cone. Como o sensor detecta até 45° inclusive, A é detectado. Atenção ao arredondamento: 5 ÷ (2,24 · 3,16) ≈ 0,706, que arredonda para 0,71. Não é "um pouco menos" que cos 45°; a diferença vem só dos valores aproximados.' },
+    B:{ calc:o => [`${V('f')} · ${V('B')} = 2·(−1) + 1·2 = <b>0</b>`, `‖${V('B')}‖ = ${SQ('(−1)² + 2²')} = ${SQ('5')} ≈ 2,24`, `cos θ = 0 ÷ (${SQ('5')} · ${SQ('5')}) = <b>0</b>`, { h:`0 &lt; 0,71 → θ = 90° <span class="verdict no">N</span>`, res:true }],
+      note:'Produto escalar <b>zero</b> significa vetores perpendiculares: B está exatamente "ao lado" do robô, a 90°. Nem era preciso calcular o módulo, pois zero dividido por qualquer número dá zero.' },
+    C:{ calc:o => [`${V('f')} · ${V('C')} = 2·(−4) + 1·(−2) = <b>−10</b>`, `‖${V('C')}‖ = ${SQ('(−4)² + (−2)²')} = ${SQ('20')} = 2${SQ('5')} ≈ 4,47`, `cos θ = −10 ÷ (${SQ('5')} · 2${SQ('5')}) = −10 ÷ 10 = <b>−1</b>`, { h:`−1 &lt; 0,71 → θ = 180° <span class="verdict no">N</span>`, res:true }],
+      note:'Produto escalar <b>negativo</b>: o obstáculo está atrás do robô (ângulo maior que 90°), e só isso já basta para dizer N. Aqui é o caso extremo: <span class="vec">C</span> = −2<span class="vec">f</span>, a direção exatamente oposta.' },
+    D:{ calc:o => [`${V('f')} · ${V('D')} = 2·3 + 1·4 = <b>10</b>`, `‖${V('D')}‖ = ${SQ('3² + 4²')} = ${SQ('25')} = 5`, `cos θ = 10 ÷ (${SQ('5')} · 5) = 2 ÷ ${SQ('5')} ≈ <b>0,89</b>`, { h:`0,89 ≥ 0,71 → θ ≈ 26,6° <span class="verdict yes">S</span>`, res:true }],
+      note:'Cosseno maior que 0,71, portanto ângulo menor que 45°: D está bem dentro do cone. Pela tabela de referência, 0,89 fica entre cos 30° (0,87) e cos 0° (1), então θ está entre 0° e 30°.' },
+    E:{ calc:o => [`${V('f')} · ${V('E')} = 2·4 + 1·(−3) = <b>5</b>`, `‖${V('E')}‖ = ${SQ('4² + (−3)²')} = ${SQ('25')} = 5`, `cos θ = 5 ÷ (${SQ('5')} · 5) = 1 ÷ ${SQ('5')} ≈ <b>0,45</b>`, { h:`0,45 &lt; 0,71 → θ ≈ 63,4° <span class="verdict no">N</span>`, res:true }],
+      note:'O produto escalar é positivo (E está à frente), mas o cosseno 0,45 é menor que 0,71: o ângulo passa de 45°. Pela referência, 0,45 fica entre cos 60° (0,5) e cos 90° (0), então θ está entre 60° e 90°. E está à frente, mas fora do cone.' },
+  };
+  OBS.forEach((o, idx) => {
+    steps.push({ short:`Obstáculo ${o.k}`, title:`Obstáculo ${o.k}: ${V(o.k)} = ${vecS(o.v)}`, obs:idx,
+      calc:info[o.k].calc(o), note:info[o.k].note, extra:() => gauge(o.c, { d:900 }),
+      scene:q1Scene(() => coneSVG(PL1) + OBS.slice(0, idx).map(p => obsSVG(PL1, p, p.det ? 'var(--zero)' : 'var(--bad)', { op:.4, w:2 })).join('') + fArrow(PL1) +
+        obsSVG(PL1, o, 'var(--sub)', { anim:true, d:150 }) + angleArc(PL1, o.v, 'var(--sub)', `θ = ${fmtT(o.th, 1)}°`, { anim:true, d:900, r:o.k === 'C' ? .9 : 1.3 }) + robotSVG(PL1)) });
+  });
+  steps.push({ short:'Conclusão', title:'Conclusão: A e D são detectados',
+    note:'Só A e D ficam dentro do cone (A exatamente na borda). Observe o atalho: o sinal do produto escalar separa "à frente" (positivo) de "ao lado ou atrás" (zero ou negativo). Para B e C não era preciso calcular cosseno nenhum para responder N.',
+    calc:OBS.map(o => `${o.k}: ${V('f')}·${V(o.k)} = ${I(o.d)}, cos θ ≈ ${fmt(o.c)} <span class="verdict ${o.det ? 'yes' : 'no'}">${o.det ? 'S' : 'N'}</span>`),
+    scene:q1Scene(() => coneSVG(PL1) + OBS.map((p, k) => obsSVG(PL1, p, p.det ? 'var(--zero)' : 'var(--bad)', { anim:true, d:k * 220 })).join('') + fArrow(PL1) + robotSVG(PL1)) });
+  return steps;
+}
+// tabela
+const q1Rows = [
+  ['A', '(1, 3)', '5', '≈ 0,71', '45°'], ['B', '(−1, 2)', '0', '0', '90°'], ['C', '(−4, −2)', '−10', '−1', '180°'], ['D', '(3, 4)', '10', '≈ 0,89', '≈ 26,6°'], ['E', '(4, −3)', '5', '≈ 0,45', '≈ 63,4°'],
+];
+function fillTable(p){
+  const s = p.steps[p.cur], last = p.cur === p.steps.length - 1;
+  const doneUpTo = last ? 5 : s.obs != null ? s.obs + 1 : 0;
+  $('#q1-table tbody').innerHTML = q1Rows.map((r, i) => {
+    const filled = i < doneUpTo, isNew = s.obs === i;
+    const cells = r.slice(2).concat([OBS[i].det ? '<span class="verdict yes">S</span>' : '<span class="verdict no">N</span>']);
+    return `<tr class="${isNew ? 'curr' : ''}"><td><b>${r[0]}</b></td><td>${r[1]}</td>${cells.map((c, k) => `<td class="${filled ? (isNew ? 'fill' : '') : 'pend'}" style="${isNew ? `animation-delay:${600 + k * 650}ms` : ''}">${filled ? c : '·'}</td>`).join('')}</tr>`;
+  }).join('');
+}
+const q1steps = q1Steps(); q1steps.forEach(s => { s.after = fillTable; });
+new Player($('#p1'), q1steps, 'Questão 1');
+$('#gab1 tbody').innerHTML = q1Rows.map((r, i) => `<tr><td><b>${r[0]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td>${OBS[i].det ? '<span class="verdict yes">S</span>' : '<span class="verdict no">N</span>'}</td></tr>`).join('');
+
+// laboratório 1
+{
+  let P = [1, 3];
+  const st = $('#l1-stage');
+  function render(){
+    const d = dot(F, P), n = norm(P);
+    let svg = PL1.open('class="drag" role="img" aria-label="Plano interativo: arraste o obstáculo"') + PL1.grid() + coneSVG(PL1) + fArrow(PL1);
+    if (n > 1e-9){
+      const c = d / (Math.sqrt(5) * n), th = deg(Math.acos(Math.max(-1, Math.min(1, c)))), det = c >= COS45 - 1e-9, col = det ? 'var(--zero)' : 'var(--bad)';
+      svg += arrow(PL1.X(0), PL1.Y(0), PL1.X(P[0]), PL1.Y(P[1]), col, { w:2.6 }) + angleArc(PL1, P, col, `${fmtT(th, 1)}°`, { r:1.1 });
+      $('#l1-out').innerHTML = `<div class="cl">${V('X')} = (${fmtT(P[0], 1)}, ${fmtT(P[1], 1)})</div><div class="cl">${V('f')} · ${V('X')} = 2·${N1(P[0])} + 1·${N1(P[1])} = <b>${fmtT(d, 2)}</b> <span class="why">${d > 1e-9 ? 'à frente' : d < -1e-9 ? 'atrás' : 'perpendicular'}</span></div><div class="cl">‖${V('X')}‖ ≈ ${fmt(n)}</div><div class="cl">cos θ ≈ <b>${fmt(c)}</b> → θ ≈ ${fmtT(th, 1)}°</div><div class="cl res">${det ? '<span class="verdict yes">S</span> detectado' : '<span class="verdict no">N</span> fora do cone'}</div>`;
+    } else $('#l1-out').innerHTML = '<div class="cl">O obstáculo está na posição do robô. Escolha outro ponto.</div>';
+    svg += `<circle class="handle" cx="${PL1.X(P[0])}" cy="${PL1.Y(P[1])}" r="9" style="fill:var(--sub);stroke:var(--surface);stroke-width:2"/>` + robotSVG(PL1) + '</svg>';
+    st.innerHTML = svg;
+  }
+  function toPlane(e){
+    const svg = st.querySelector('svg'), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    let x = PL1.xmin + (q.x - PL1.pad) / PL1.u, y = PL1.ymax - (q.y - PL1.pad) / PL1.u;
+    const snap = $('#l1-snap').checked ? 1 : 10;
+    x = Math.round(x * snap) / snap; y = Math.round(y * snap) / snap;
+    return [Math.max(PL1.xmin, Math.min(PL1.xmax, x)), Math.max(PL1.ymin, Math.min(PL1.ymax, y))];
+  }
+  let dragging = false;
+  st.addEventListener('pointerdown', e => { if (!e.target.closest('svg')) return; dragging = true; try { st.setPointerCapture(e.pointerId); } catch (_) {} P = toPlane(e); render(); });
+  st.addEventListener('pointermove', e => { if (!dragging) return; const q = toPlane(e); if (q[0] !== P[0] || q[1] !== P[1]){ P = q; render(); } });
+  st.addEventListener('pointerup', () => { dragging = false; });
+  $('#l1-go').innerHTML = OBS.map(o => `<button class="btn sm" type="button" data-k="${o.k}">${o.k}</button>`).join('');
+  $('#l1-go').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; P = OBS.find(o => o.k === b.dataset.k).v.slice(); render(); });
+  render();
+}
+
+/* =====================================================================
+   QUESTÃO 2 · vista 3D
+   ===================================================================== */
+const add3 = (a, b) => a.map((x, i) => x + b[i]);
+const sub3 = (a, b) => a.map((x, i) => x - b[i]);
+const mul3 = (k, a) => a.map(x => k * x);
+class View3D {
+  constructor(host, o = {}){
+    this.host = host; this.yaw0 = o.yaw ?? -2.3; this.pitch0 = o.pitch ?? .45; this.yaw = this.yaw0; this.pitch = this.pitch0; this.s = o.s || 44; this.W = 420; this.H = 330; this.cx = 210; this.cy = 205;
+    this.draw = null;
+    let drag = null;
+    host.addEventListener('pointerdown', e => { if (!e.target.closest('svg')) return; drag = { x:e.clientX, y:e.clientY, yaw:this.yaw, pitch:this.pitch }; try { host.setPointerCapture(e.pointerId); } catch (_) {} });
+    host.addEventListener('pointermove', e => { if (!drag) return; this.yaw = drag.yaw - (e.clientX - drag.x) * .01; this.pitch = Math.max(-.15, Math.min(1.35, drag.pitch + (e.clientY - drag.y) * .008)); this.render(false); });
+    host.addEventListener('pointerup', () => { drag = null; });
+  }
+  reset(){ this.yaw = this.yaw0; this.pitch = this.pitch0; }
+  P(p){ const a = this.yaw, b = this.pitch, xr = p[0] * Math.cos(a) - p[1] * Math.sin(a), yr = p[0] * Math.sin(a) + p[1] * Math.cos(a), up = p[2] * Math.cos(b) + yr * Math.sin(b); return [+(this.cx + this.s * xr).toFixed(2), +(this.cy - this.s * up).toFixed(2)]; }
+  render(anim){ if (this.draw) this.host.innerHTML = `<svg viewBox="0 0 ${this.W} ${this.H}" class="drag" role="img" aria-label="Vista 3D das barras; arraste para girar">${this.draw(this, anim)}<text class="tk" x="${this.W - 8}" y="${this.H - 8}" text-anchor="end">arraste para girar ↔</text></svg>`; }
+}
+function a3(view, p, q, col, o = {}){ const [x1, y1] = view.P(p), [x2, y2] = view.P(q); return arrow(x1, y1, x2, y2, col, o); }
+function s3(view, p, q, col, o = {}){ const [x1, y1] = view.P(p), [x2, y2] = view.P(q); return seg(x1, y1, x2, y2, col, o); }
+function l3(view, p, s, col, o = {}){
+  const [x, y] = view.P(p), [ox, oy] = view.P(o.from || [0, 0, 0]); let dx = x - ox, dy = y - oy; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+  const k = o.off ?? 16; return txt(x + dx * k, y + dy * k, s, col, o.cls || 'lb', { halo:true, fade:o.fade, d:o.d });
+}
+function scene3D(view, st, anim){
+  // st: { u, v, show:{...}, an:{...} }
+  const A = k => anim && st.an && k in st.an ? 'draw' : '';
+  const Fd = k => !!(anim && st.an && k in st.an);
+  const D = k => (st.an && st.an[k]) || 0;
+  const u = st.u, v = st.v, S = st.show || {};
+  let h = '';
+  const G = st.gridR || [-2, 4, -3, 4];
+  for (let x = G[0]; x <= G[1]; x++) h += s3(view, [x, G[2], 0], [x, G[3], 0], 'var(--grid)', { w:1 });
+  for (let y = G[2]; y <= G[3]; y++) h += s3(view, [G[0], y, 0], [G[1], y, 0], 'var(--grid)', { w:1 });
+  const ax = st.axisL || 4.3;
+  [['x', [1, 0, 0]], ['y', [0, 1, 0]], ['z', [0, 0, 1]]].forEach(([n, e]) => {
+    h += s3(view, mul3(n === 'z' ? 0 : -2, e), [0, 0, 0], 'var(--muted)', { w:1, dash:true });
+    h += a3(view, [0, 0, 0], mul3(ax, e), 'var(--muted)', { w:1.4, h:8 }) + l3(view, mul3(ax, e), n, 'var(--muted)', { off:10, cls:'lbs' });
+  });
+  if (S.mirror){
+    const pts = [[-1.5, 0, -.3], [4, 0, -.3], [4, 0, 3.2], [-1.5, 0, 3.2]].map(p => view.P(p).join(',')).join(' ');
+    h += `<g class="${Fd('mirror') ? 'fade' : ''}" style="--d:${D('mirror')}ms"><polygon points="${pts}" style="fill:var(--op);fill-opacity:.1;stroke:var(--op);stroke-opacity:.45"/></g>` + l3(view, [4, 0, 3.2], 'plano y = 0 (espelho)', 'var(--op)', { cls:'lbs', off:4, fade:Fd('mirror'), d:D('mirror') });
+  }
+  const proj = (w, col, key) => {
+    const p1 = [w[0], 0, 0], p2 = [w[0], w[1], 0], d0 = D(key);
+    return s3(view, [0, 0, 0], p1, col, { w:2.2, cls:A(key), d:d0 }) + s3(view, p1, p2, col, { w:2.2, cls:A(key), d:d0 + 700 }) + s3(view, p2, w, col, { w:2.2, cls:A(key), d:d0 + 1400 }) +
+      s3(view, [0, 0, 0], p2, 'var(--muted)', { w:1.5, dash:true, cls:Fd(key) ? 'fade' : '', d:d0 + 2100 }) +
+      txt(...mid2(view, [0, 0, 0], p2), '√' + (w[0] ** 2 + w[1] ** 2), 'var(--muted)', 'lbs', { halo:true, fade:Fd(key), d:d0 + 2200 }) +
+      txt(...mid2(view, [0, 0, 0], p1), I(w[0]), col, 'lbs', { halo:true, fade:Fd(key), d:d0 + 400 }) +
+      txt(...mid2(view, p1, p2), I(w[1]), col, 'lbs', { halo:true, fade:Fd(key), d:d0 + 1100 }) +
+      txt(...mid2(view, p2, w, 12), I(w[2]), col, 'lbs', { halo:true, fade:Fd(key), d:d0 + 1800 });
+  };
+  if (S.projU) h += proj(u, 'var(--op)', 'projU');
+  if (S.projV) h += proj(v, 'var(--sub)', 'projV');
+  const sum = add3(u, v);
+  if (S.para){
+    const poly = [[0, 0, 0], u, sum, v].map(p => view.P(p).join(',')).join(' ');
+    h += `<g class="${Fd('para') ? 'fade' : ''}" style="--d:${D('para')}ms"><polygon points="${poly}" style="fill:var(--piv);fill-opacity:.1"/>` +
+      a3(view, u, sum, 'var(--sub)', { w:1.8, dash:true, op:.7 }) + a3(view, v, sum, 'var(--op)', { w:1.8, dash:true, op:.7 }) + '</g>';
+  }
+  if (S.right){
+    const e = .5, uh = mul3(e / norm(u), u), vh = mul3(e / norm(v), v);
+    const pts = [uh, add3(uh, vh), vh].map(p => view.P(p).join(',')).join(' ');
+    h += `<g class="${A('right')}" style="--d:${D('right')}ms;--dur:600ms"><polyline points="${pts}" pathLength="1" style="fill:none;stroke:var(--piv);stroke-width:2"/></g>`;
+  }
+  if (S.vGhost) h += a3(view, [0, 0, 0], S.vGhost, 'var(--sub)', { w:2, dash:true, op:.55 }) + l3(view, S.vGhost, `(${S.vGhost.map(I).join(', ')})`, 'var(--sub)', { cls:'lbs' });
+  h += a3(view, [0, 0, 0], u, 'var(--op)', { w:3.2, cls:A('u'), d:D('u') }) + l3(view, u, 'u', 'var(--op)', { fade:Fd('u'), d:D('u') + 600 });
+  h += a3(view, [0, 0, 0], v, 'var(--sub)', { w:3.2, cls:A('v'), d:D('v') }) + l3(view, v, S.vName || 'v', 'var(--sub)', { fade:Fd('v'), d:D('v') + 600 });
+  if (S.mirrorLink) h += s3(view, S.vGhost, v, 'var(--muted)', { w:1.3, dash:true, cls:Fd('v') ? 'fade' : '', d:D('v') + 700 });
+  if (S.sum) h += a3(view, [0, 0, 0], sum, 'var(--piv)', { w:3.2, cls:A('sum'), d:D('sum') }) + l3(view, sum, 'u + v', 'var(--piv)', { fade:Fd('sum'), d:D('sum') + 600 });
+  if (S.diff) h += a3(view, v, u, 'var(--zero)', { w:3.2, cls:A('diff'), d:D('diff') }) + l3(view, add3(mul3(.5, add3(u, v)), [0, 0, 0]), 'u − v', 'var(--zero)', { from:[0, 0, 0], off:-26, fade:Fd('diff'), d:D('diff') + 600 });
+  const [ox, oy] = view.P([0, 0, 0]);
+  h += `<circle cx="${ox}" cy="${oy}" r="5" style="fill:var(--ink)"/>` + txt(ox + 14, oy + 14, 'nó', 'var(--ink)', 'lbs', { anchor:'start', halo:true });
+  return h;
+}
+function mid2(view, p, q, off = 0){ const [x1, y1] = view.P(p), [x2, y2] = view.P(q); return [(x1 + x2) / 2 + off, (y1 + y2) / 2 - (off ? 0 : 9)]; }
+
+const U = [1, 2, 2], VV = [2, -2, 1];
+function q2Steps(){
+  const steps = [];
+  const mk = (title, short, calc, note, st, extra) => ({ title, short, calc, note, extra, st });
+  steps.push(mk('As duas barras saindo do nó', 'As barras',
+    [`${V('u')} = (1, 2, 2)`, `${V('v')} = (2, −2, 1)`],
+    'Cada barra é uma flecha que sai do nó (a origem). As coordenadas dizem quanto a barra avança em <i>x</i>, em <i>y</i> e em <i>z</i>. Gire a figura arrastando para ver as barras de vários ângulos.',
+    { u:U, v:VV, show:{}, an:{ u:200, v:900 } }));
+  steps.push(mk('Módulo de u: Pitágoras duas vezes', '‖u‖',
+    [`No chão: ${SQ('1² + 2²')} = ${SQ('5')}`, `Subindo 2: ${SQ('(√5)² + 2²')} = ${SQ('5 + 4')}`, { h:`‖${V('u')}‖ = ${SQ('1² + 2² + 2²')} = ${SQ('9')} = 3 m`, res:true }],
+    'Ande pelos eixos até a ponta: 1 em <i>x</i>, 2 em <i>y</i>, 2 em <i>z</i>. No chão, a diagonal mede √5 (Pitágoras). Ela e a subida de 2 formam outro triângulo retângulo, cuja hipotenusa é a barra. Resultado: somar os quadrados das três coordenadas e tirar a raiz.',
+    { u:U, v:VV, show:{ projU:1 }, an:{ projU:200 } }));
+  steps.push(mk('Módulo de v', '‖v‖',
+    [`‖${V('v')}‖ = ${SQ('2² + (−2)² + 1²')}`, `= ${SQ('4 + 4 + 1')} = ${SQ('9')}`, { h:'= 3 m', res:true }],
+    'O mesmo caminho para <span class="vec c-sub">v</span>: 2 em <i>x</i>, −2 em <i>y</i> (para trás), 1 em <i>z</i>. O sinal negativo não atrapalha: ao elevar ao quadrado, (−2)² = 4. As duas barras medem 3 m.',
+    { u:U, v:VV, show:{ projV:1 }, an:{ projV:200 } }));
+  steps.push(mk('Produto escalar: multiplicar e somar', 'u · v',
+    [`${V('u')} · ${V('v')} = 1·2 + 2·(−2) + 2·1`, '= 2 − 4 + 2', { h:'= 0', res:true }, `cos θ = 0 ÷ (3 · 3) = 0 → θ = 90°`],
+    'Multiplicamos coordenada com coordenada e somamos. O resultado zero tem um significado geométrico forte: o cosseno do ângulo entre as barras é zero, então elas são <b>perpendiculares</b>. O canto laranja marca o ângulo reto.',
+    { u:U, v:VV, show:{ right:1 }, an:{ right:1800 } }));
+  steps.push(mk('Soma: a diagonal do paralelogramo', '‖u + v‖',
+    [`${V('u')} + ${V('v')} = (1+2, 2−2, 2+1) = (3, 0, 3)`, { h:`‖${V('u')} + ${V('v')}‖ = ${SQ('3² + 0² + 3²')} = ${SQ('18')} = 3${SQ('2')} ≈ 4,24 m`, res:true }, `Conferindo: ${SQ('3² + 3²')} = ${SQ('18')} <span class="why">(Pitágoras, pois u ⊥ v)</span>`],
+    'Pela regra do paralelogramo, copiamos <span class="vec c-sub">v</span> a partir da ponta de <span class="vec c-op">u</span> (e vice-versa). A soma é a diagonal que sai do nó. Como as barras são perpendiculares, a diagonal é a hipotenusa de um triângulo retângulo de catetos 3 e 3.',
+    { u:U, v:VV, show:{ para:1, sum:1, right:1 }, an:{ para:200, sum:900 } }));
+  steps.push(mk('Afirmação I: ângulo reto?', 'I · V',
+    [`${V('u')} · ${V('v')} = 0`, '⇒ cos θ = 0 ⇒ θ = 90°', { h:'<span class="verdict yes">V</span> verdadeira', res:true }],
+    'Produto escalar zero entre vetores não nulos significa exatamente que eles são perpendiculares. As barras formam um ângulo reto. Justificativa esperada: <span class="vec">u</span> · <span class="vec">v</span> = 0.',
+    { u:U, v:VV, show:{ right:1 }, an:{ right:200 }, view:[-2.3, .45] }));
+  steps.push(mk('Afirmação II: trocar um sinal muda o módulo?', 'II · F',
+    [`${V('v')} = (2, −2, 1): ‖${V('v')}‖ = ${SQ('4 + 4 + 1')} = 3`, `${V("v'")} = (2, 2, 1): ‖${V("v'")}‖ = ${SQ('4 + 4 + 1')} = 3`, '(−a)² = a²', { h:'<span class="verdict no">F</span> falsa', res:true }],
+    'Trocar o sinal de uma coordenada é ver a barra num <b>espelho</b>: aqui, o plano <i>y</i> = 0. A imagem no espelho tem o mesmo tamanho; muda só a direção. Na conta, cada coordenada aparece ao quadrado, e o quadrado apaga o sinal. Contraexemplo: <span class="vec">v</span> e <span class="vec">v\'</span> medem 3.',
+    { u:U, v:[2, 2, 1], show:{ mirror:1, vGhost:VV, vName:"v'", mirrorLink:1 }, an:{ mirror:200, v:900 }, view:[-1.9, .25] }));
+  steps.push(mk('Afirmação III: as diagonais são iguais?', 'III · V',
+    [`${V('u')} − ${V('v')} = (1−2, 2+2, 2−1) = (−1, 4, 1)`, `‖${V('u')} − ${V('v')}‖ = ${SQ('1 + 16 + 1')} = ${SQ('18')}`, `‖${V('u')} + ${V('v')}‖ = ${SQ('18')}`, { h:'<span class="verdict yes">V</span> verdadeira', res:true }],
+    'A diferença <span class="vec c-zero">u − v</span> é a outra diagonal: liga a ponta de <span class="vec c-sub">v</span> à ponta de <span class="vec c-op">u</span>. Como o ângulo entre as barras é reto, o paralelogramo é um <b>retângulo</b> (aqui até um quadrado, porque as duas medem 3 m), e retângulos têm diagonais iguais. As duas medem √18 ≈ 4,24 m.',
+    { u:U, v:VV, show:{ para:1, sum:1, diff:1, right:1 }, an:{ para:200, diff:800 }, view:[-2.3, .45] },
+    () => `<p class="hint">Em geral, ‖u + v‖² − ‖u − v‖² = 4 u · v. As diagonais só têm o mesmo comprimento quando u · v = 0. Teste no laboratório abaixo.</p>`));
+  steps.push(mk('Resumo da questão 2', 'Resumo',
+    [`‖${V('u')}‖ = 3 m, ‖${V('v')}‖ = 3 m`, `${V('u')} · ${V('v')} = 0`, `‖${V('u')} + ${V('v')}‖ = 3${SQ('2')} ≈ 4,24 m`, { h:'I: V · II: F · III: V', res:true }],
+    'Tudo nesta questão gira em torno de um fato: <span class="vec">u</span> · <span class="vec">v</span> = 0. Ele dá o ângulo reto (I), faz a soma obedecer a Pitágoras e torna as duas diagonais iguais (III).',
+    { u:U, v:VV, show:{ para:1, sum:1, diff:1, right:1 }, an:{ u:0, v:200, para:400, sum:700, diff:1000 }, view:[-2.3, .45] }));
+  return steps.map(s => ({ ...s, scene:(stage, pl) => {
+    if (!pl.view || pl.view.host !== stage) pl.view = new View3D(stage);
+    let first = true;
+    if (s.st.view){ pl.view.yaw = s.st.view[0]; pl.view.pitch = s.st.view[1]; }
+    pl.view.draw = (view, anim) => scene3D(view, s.st, anim);
+    pl.view.render(true); void first;
+  } }));
+}
+new Player($('#p2'), q2Steps(), 'Questão 2');
+
+// laboratório 2
+{
+  const st = $('#l2-stage'), view = new View3D(st, { s:40 });
+  let u = [1, 2, 2], v = [2, -2, 1];
+  const read = () => { let ok = true; $$('#l2-in input').forEach(inp => { const x = Number(inp.value); const good = inp.value.trim() !== '' && Number.isFinite(x) && Math.abs(x) <= 5; inp.classList.toggle('bad-input', !good); if (!good) ok = false; }); if (!ok) return false; const g = k => Number($(`#l2-in [data-k="${k}"]`).value); u = [g('u0'), g('u1'), g('u2')]; v = [g('v0'), g('v1'), g('v2')]; return true; };
+  function render(){
+    const nu = norm(u), nv = norm(v), d = dot(u, v), s = add3(u, v), df = sub3(u, v), ns = norm(s), nd = norm(df);
+    const M = Math.max(3, ...u.map(Math.abs), ...v.map(Math.abs), ...s.map(Math.abs));
+    view.s = 40 * 3.2 / (M + .2);
+    const show = { para:1, sum:1, diff:1, right:Math.abs(d) < 1e-9 && nu > 0 && nv > 0 };
+    view.draw = (vw, anim) => scene3D(vw, { u, v, show, gridR:[-Math.ceil(M), Math.ceil(M), -Math.ceil(M), Math.ceil(M)], axisL:M + .5 }, anim);
+    view.render(false);
+    const sq = w => `${SQ(w.map(x => x < 0 ? `(${I(x)})²` : `${x}²`).join(' + '))}`;
+    const cos = nu && nv ? d / (nu * nv) : null;
+    $('#l2-out').innerHTML = `<div class="cl">‖${V('u')}‖ = ${sq(u)} ≈ ${fmt(nu)}</div><div class="cl">‖${V('v')}‖ = ${sq(v)} ≈ ${fmt(nv)}</div>
+      <div class="cl">${V('u')} · ${V('v')} = ${u.map((x, i) => `${IP(x)}·${IP(v[i])}`).join(' + ')} = <b>${I(d)}</b></div>
+      <div class="cl">θ ≈ ${cos == null ? '—' : fmtT(deg(Math.acos(Math.max(-1, Math.min(1, cos)))), 1) + '°'} ${Math.abs(d) < 1e-9 && cos != null ? '<span class="verdict yes">ângulo reto</span>' : ''}</div>
+      <div class="cl c-piv">‖${V('u')} + ${V('v')}‖ ≈ ${fmt(ns)}</div><div class="cl c-zero">‖${V('u')} − ${V('v')}‖ ≈ ${fmt(nd)}</div>
+      <div class="cl res">${Math.abs(ns - nd) < 1e-9 ? 'Diagonais iguais' : 'Diagonais diferentes'} <span class="why">(diferença dos quadrados = 4·u·v = ${I(4 * d)})</span></div>`;
+  }
+  $('#l2-in').addEventListener('input', () => { if (read()) render(); });
+  const setVals = (a, b) => { ['u0', 'u1', 'u2'].forEach((k, i) => { $(`#l2-in [data-k="${k}"]`).value = a[i]; }); ['v0', 'v1', 'v2'].forEach((k, i) => { $(`#l2-in [data-k="${k}"]`).value = b[i]; }); read(); render(); };
+  $('#l2-prova').addEventListener('click', () => setVals([1, 2, 2], [2, -2, 1]));
+  $('#l2-rand').addEventListener('click', () => {
+    const r = () => Math.floor(Math.random() * 7) - 3;
+    let a, b, tries = 0;
+    do { a = [r(), r(), r()]; b = [r(), r(), r()]; tries++; } while ((norm(a) === 0 || norm(b) === 0 || (Math.random() < .5 && dot(a, b) !== 0)) && tries < 400);
+    setVals(a, b);
+  });
+  $('#l2-reset').addEventListener('click', () => { view.reset(); render(); });
+  render();
+}
+
+/* =====================================================================
+   QUESTÃO 3
+   ===================================================================== */
+const PL3 = new Plane({ xmin:-2, xmax:8, ymin:-1, ymax:9, u:32, pad:20 });
+const DS = [[4, 2], [-1, 5], [3, 1]], DCOL = ['var(--op)', 'var(--sub)', 'var(--zero)'];
+function droneSVG(id, x, y){
+  const rot = (cx, cy) => `<g transform="translate(${cx} ${cy})"><ellipse class="rot" rx="7" ry="2.3" style="fill:var(--muted);opacity:.8"/><circle r="1.8" style="fill:var(--ink)"/></g>`;
+  return `<g id="${id}" transform="translate(${x} ${y})"><line x1="-10" y1="-7" x2="10" y2="7" style="stroke:var(--ink);stroke-width:2.6"/><line x1="-10" y1="7" x2="10" y2="-7" style="stroke:var(--ink);stroke-width:2.6"/>${rot(-10, -7)}${rot(10, -7)}${rot(-10, 7)}${rot(10, 7)}<rect x="-6" y="-4.5" width="12" height="9" rx="3.5" style="fill:var(--op)"/><rect x="-3.5" y="5" width="7" height="6" rx="1" style="fill:var(--piv)"/></g>`;
+}
+const baseSVG = pl => { const x = pl.X(0), y = pl.Y(0); return `<g><polygon points="${x - 9},${y + 1} ${x},${y - 9} ${x + 9},${y + 1}" style="fill:var(--ink)"/><rect x="${x - 7}" y="${y}" width="14" height="9" style="fill:var(--ink)"/>${txt(x + 13, y + 12, 'Base', 'var(--ink)', 'lbs', { anchor:'start', halo:true })}</g>`; };
+const flagSVG = (pl, p) => { const x = pl.X(p[0]), y = pl.Y(p[1]); return `<g><line x1="${x}" y1="${y}" x2="${x}" y2="${y - 22}" style="stroke:var(--ink);stroke-width:1.6"/><polygon points="${x},${y - 22} ${x + 13},${y - 18} ${x},${y - 14}" style="fill:var(--piv)"/></g>`; };
+function pathPts(order){ const pts = [[0, 0]]; order.forEach(k => { const l = pts[pts.length - 1]; pts.push([l[0] + DS[k][0], l[1] + DS[k][1]]); }); return pts; }
+const ptLabel = (pl, p, s, col, o = {}) => `<circle cx="${pl.X(p[0])}" cy="${pl.Y(p[1])}" r="4" style="fill:${col}"/>` + txt(pl.X(p[0]) + (o.dx ?? 8), pl.Y(p[1]) + (o.dy ?? -10), s, col, 'lbs', { anchor:o.anchor || 'start', halo:true, fade:o.fade, d:o.d });
+function flyDrone(player, id, from, to, dur, delay, pl){
+  const el = () => document.getElementById(id);
+  return tween(dur, t => { const e = el(); if (!e) return; const x = pl.X(from[0] + (to[0] - from[0]) * t), y = pl.Y(from[1] + (to[1] - from[1]) * t); e.setAttribute('transform', `translate(${x} ${y - 14})`); }, delay);
+}
+function q3Steps(){
+  const pts = pathPts([0, 1, 2]), steps = [];
+  const legs = (k, lab) => pts.slice(0, k + 1).map((p, i) => i ? arrow(PL3.X(pts[i - 1][0]), PL3.Y(pts[i - 1][1]), PL3.X(p[0]), PL3.Y(p[1]), DCOL[i - 1], { w:3 }) + (lab ? txt(...midP(pts[i - 1], p, i - 1, i === 3 ? -20 : 18), lab(i - 1), DCOL[i - 1], 'lbs', { anchor:i === 3 ? 'end' : 'start', halo:true, fade:true, d:300 + i * 300 }) : txt(...midP(pts[i - 1], p, i - 1), `d${'₁₂₃'[i - 1]}`, DCOL[i - 1], 'lb', { halo:true })) : '').join('');
+  const open = () => PL3.open('role="img" aria-label="Plano cartesiano do drone"') + PL3.grid({ xl:'x (leste)', yl:'y (norte)' });
+  steps.push({ short:'O plano', title:'A base e as direções',
+    calc:['Base = (0, 0)', 'x positivo: leste · x negativo: oeste', 'y positivo: norte · y negativo: sul'],
+    note:'O drone começa na base, na origem. Um deslocamento (a, b) significa andar a km para o leste (oeste, se a for negativo) e b km para o norte.',
+    scene:(st, p) => { st.innerHTML = open() + baseSVG(PL3) + droneSVG('dr', PL3.X(0), PL3.Y(0) - 14) + '</svg>'; } });
+  const legInfo = [
+    { calc:[`${V('d<sub>1</sub>')} = (4, 2)`, { h:'P₁ = (0, 0) + (4, 2) = (4, 2)', res:true }], note:'Primeiro trecho: 4 km para o leste e 2 km para o norte. A flecha começa na base e termina no ponto P₁.' },
+    { calc:[`${V('d<sub>2</sub>')} = (−1, 5)`, { h:'P₂ = (4, 2) + (−1, 5) = (3, 7)', res:true }], note:'Regra do polígono: o segundo vetor <b>começa onde o primeiro terminou</b>, em P₁. O −1 leva 1 km para o oeste e o 5 leva 5 km para o norte.' },
+    { calc:[`${V('d<sub>3</sub>')} = (3, 1)`, { h:'P₃ = (3, 7) + (3, 1) = (6, 8)', res:true }], note:'O terceiro vetor começa em P₂. Chegamos ao ponto de entrega, P₃ = (6, 8).' },
+  ];
+  [0, 1, 2].forEach(k => {
+    steps.push({ short:`Trecho d${'₁₂₃'[k]}`, title:`Trecho ${k + 1}: ${V(`d<sub>${k + 1}</sub>`)} = ${vecS(DS[k])}`, calc:legInfo[k].calc, note:legInfo[k].note,
+      scene:(st, p) => {
+        const a = pts[k], b = pts[k + 1];
+        st.innerHTML = open() + legs(k) + `<g>${arrow(PL3.X(a[0]), PL3.Y(a[1]), PL3.X(b[0]), PL3.Y(b[1]), DCOL[k], { cls:'draw', d:400, dur:1500, w:3.4 })}</g>` +
+          seg(PL3.X(a[0]), PL3.Y(a[1]), PL3.X(a[0] + DS[k][0]), PL3.Y(a[1]), 'var(--muted)', { dash:true, cls:'fade', d:2000 }) + seg(PL3.X(b[0]), PL3.Y(a[1]), PL3.X(b[0]), PL3.Y(b[1]), 'var(--muted)', { dash:true, cls:'fade', d:2000 }) +
+          txt(PL3.X(a[0] + DS[k][0] / 2), PL3.Y(a[1]) + 13, `${I(DS[k][0])} ${DS[k][0] < 0 ? '(oeste)' : '(leste)'}`, 'var(--muted)', 'lbs', { fade:true, d:2100, halo:true }) +
+          txt(PL3.X(b[0]) + (DS[k][0] < 0 ? -8 : 8), PL3.Y(a[1] + DS[k][1] / 2), `+${DS[k][1]} (norte)`, 'var(--muted)', 'lbs', { anchor:DS[k][0] < 0 ? 'end' : 'start', fade:true, d:2200, halo:true }) +
+          pts.slice(1, k + 1).map((q, i) => ptLabel(PL3, q, `P${'₁₂₃'[i]} (${q.join(', ')})`, 'var(--ink)', i === 1 ? { anchor:'end', dx:-8 } : {})).join('') +
+          ptLabel(PL3, b, `P${'₁₂₃'[k]} (${b.join(', ')})`, DCOL[k], { fade:true, d:1900, ...(k === 1 ? { anchor:'end', dx:-8 } : k === 2 ? { anchor:'end', dx:-12, dy:12 } : {}) }) +
+          baseSVG(PL3) + (k === 2 ? flagSVG(PL3, b) : '') + droneSVG('dr', PL3.X(a[0]), PL3.Y(a[1]) - 14) + '</svg>';
+        p.cancels.push(flyDrone(p, 'dr', a, b, 1500, 400, PL3));
+      } });
+  });
+  steps.push({ short:'Resultante', title:'O vetor resultante fecha o polígono',
+    calc:[`${V('R')} = ${V('d<sub>1</sub>')} + ${V('d<sub>2</sub>')} + ${V('d<sub>3</sub>')}`, '= (4 − 1 + 3, 2 + 5 + 1)', { h:'= (6, 8): ponto de entrega', res:true }],
+    note:'A resultante liga o começo da primeira flecha (a base) ao fim da última (a entrega). Ela é o atalho: um único deslocamento que leva ao mesmo lugar. Somar as coordenadas dá o mesmo ponto que o desenho.',
+    scene:st => { st.innerHTML = open() + legs(3) + pts.slice(1).map((q, i) => ptLabel(PL3, q, `P${'₁₂₃'[i]} (${q.join(', ')})`, 'var(--ink)', i === 1 ? { anchor:'end', dx:-8 } : {})).join('') +
+      arrow(PL3.X(0), PL3.Y(0), PL3.X(6), PL3.Y(8), 'var(--piv)', { cls:'draw', d:300, dur:1300, w:3.6 }) + txt(PL3.X(2.6), PL3.Y(4.3), 'R', 'var(--piv)', 'lb', { fade:true, d:1500, halo:true }) +
+      baseSVG(PL3) + flagSVG(PL3, [6, 8]) + droneSVG('dr', PL3.X(6), PL3.Y(8) - 14) + '</svg>'; } });
+  steps.push({ short:'Distância', title:'A distância em linha reta',
+    calc:['Catetos: 6 km (leste) e 8 km (norte)', `‖${V('R')}‖ = ${SQ('6² + 8²')} = ${SQ('36 + 64')}`, { h:`= ${SQ('100')} = 10 km`, res:true }],
+    note:'A resultante é a hipotenusa de um triângulo retângulo: 6 km para o leste e 8 km para o norte. É o famoso triângulo 3-4-5 multiplicado por 2: 6-8-10.',
+    scene:st => { st.innerHTML = open() + legs(3).replace(/<g /g, '<g opacity=".3" ') +
+      seg(PL3.X(0), PL3.Y(0), PL3.X(6), PL3.Y(0), 'var(--ink)', { w:2.4, cls:'draw', d:300 }) + seg(PL3.X(6), PL3.Y(0), PL3.X(6), PL3.Y(8), 'var(--ink)', { w:2.4, cls:'draw', d:1000 }) +
+      `<polyline points="${PL3.X(5.6)},${PL3.Y(0)} ${PL3.X(5.6)},${PL3.Y(.4)} ${PL3.X(6)},${PL3.Y(.4)}" class="fade" style="fill:none;stroke:var(--ink);--d:1600ms"/>` +
+      txt(PL3.X(3), PL3.Y(0) + 13, '6 km', 'var(--ink)', 'lbs', { fade:true, d:700, halo:true }) + txt(PL3.X(6) + 8, PL3.Y(4), '8 km', 'var(--ink)', 'lbs', { anchor:'start', fade:true, d:1400, halo:true }) +
+      arrow(PL3.X(0), PL3.Y(0), PL3.X(6), PL3.Y(8), 'var(--piv)', { w:3.6 }) + txt(PL3.X(2.3), PL3.Y(4.5), '10 km', 'var(--piv)', 'lbs', { fade:true, d:1900, halo:true }) +
+      baseSVG(PL3) + flagSVG(PL3, [6, 8]) + '</svg>'; } });
+  const L = DS.map(norm), tot = L.reduce((a, b) => a + b, 0);
+  steps.push({ short:'Caminho × reta', title:'Caminho voado ou linha reta?',
+    calc:[`‖${V('d<sub>1</sub>')}‖ = ${SQ('20')} ≈ 4,47`, `‖${V('d<sub>2</sub>')}‖ = ${SQ('26')} ≈ 5,10`, `‖${V('d<sub>3</sub>')}‖ = ${SQ('10')} ≈ 3,16`, `Caminho ≈ ${fmt(tot)} km`, { h:'Linha reta = 10 km', res:true }],
+    note:`O drone voou cerca de ${fmt(tot)} km, mas a distância entre a base e a entrega é 10 km. Somar os <b>módulos</b> dá o caminho; o módulo da <b>soma</b> dá a distância em linha reta, que nunca é maior (desigualdade triangular). O item b pede a linha reta: 10 km.`,
+    scene:st => { st.innerHTML = open() + legs(3, i => `d${'₁₂₃'[i]} ≈ ${fmt(L[i])}`) +
+      arrow(PL3.X(0), PL3.Y(0), PL3.X(6), PL3.Y(8), 'var(--piv)', { w:3.2, dash:true }) + txt(PL3.X(2.3), PL3.Y(4.5), '10', 'var(--piv)', 'lbs', { halo:true }) + baseSVG(PL3) + flagSVG(PL3, [6, 8]) + '</svg>'; } });
+  return steps;
+}
+function midP(a, b, k, off = 14){
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+  const nx = -dy / L, ny = dx / L, side = -1;
+  return [PL3.X(mx + side * nx * off / PL3.u), PL3.Y(my + side * ny * off / PL3.u)];
+}
+new Player($('#p3'), q3Steps(), 'Questão 3');
+
+// laboratório 3
+{
+  const orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+  let cur = 0, cancels = [];
+  $('#l3-orders').innerHTML = orders.map((o, i) => `<button class="btn sm" type="button" data-i="${i}" aria-pressed="${i === 0}">${o.map(k => `d${'₁₂₃'[k]}`).join(' → ')}</button>`).join('');
+  function run(){
+    cancels.forEach(c => c()); cancels = [];
+    const ord = orders[cur], pts = pathPts(ord), st = $('#l3-stage'), per = 1100;
+    let h = PL3.open('role="img" aria-label="Trajeto do drone na ordem escolhida"') + PL3.grid({ xl:'x (leste)', yl:'y (norte)' });
+    orders.forEach((o, i) => { if (i === cur) return; const p = pathPts(o); h += `<polyline points="${p.map(q => `${PL3.X(q[0])},${PL3.Y(q[1])}`).join(' ')}" style="fill:none;stroke:var(--muted);stroke-width:1;opacity:.35" stroke-dasharray="3 4"/>`; });
+    ord.forEach((k, i) => { const a = pts[i], b = pts[i + 1]; h += arrow(PL3.X(a[0]), PL3.Y(a[1]), PL3.X(b[0]), PL3.Y(b[1]), DCOL[k], { cls:'draw', d:200 + i * per, dur:per - 100, w:3.2 }) + (i < 2 ? `<g class="fade" style="--d:${200 + (i + 1) * per - 200}ms">${ptLabel(PL3, b, `(${b.join(', ')})`, 'var(--ink)', b[0] < 2 ? { anchor:'end', dx:-8 } : {})}</g>` : ''); });
+    h += arrow(PL3.X(0), PL3.Y(0), PL3.X(6), PL3.Y(8), 'var(--piv)', { cls:'draw', d:200 + 3 * per, dur:900, w:3.4, dash:false }) + baseSVG(PL3) + flagSVG(PL3, [6, 8]) + droneSVG('dr3', PL3.X(0), PL3.Y(0) - 14) + '</svg>';
+    st.innerHTML = h;
+    ord.forEach((k, i) => cancels.push(flyDrone(null, 'dr3', pts[i], pts[i + 1], per - 100, 200 + i * per, PL3)));
+    const L = ord.map(k => norm(DS[k]));
+    $('#l3-out').innerHTML = `<div class="cl">${ord.map(k => `${V(`d<sub>${k + 1}</sub>`)}`).join(' + ')}</div><div class="cl">Pontos: ${pts.map(p => `(${p.map(I).join(', ')})`).join(' → ')}</div><div class="cl res">Entrega: (6, 8) · reta: 10 km</div><div class="cl">Caminho: ${L.map(x => fmt(x)).join(' + ')} ≈ ${fmt(L.reduce((a, b) => a + b, 0))} km</div>`;
+  }
+  $('#l3-orders').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.i; $$('#l3-orders button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); run(); });
+  $('#l3-fly').addEventListener('click', run);
+  run();
+}
+})();
+</script>
+</body>
+</html>
