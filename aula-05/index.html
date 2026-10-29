@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratório de Matrizes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Layout: o mesmo caderno de álgebra do laboratório de sistemas lineares (mesma disciplina). Cada seção pode ser recolhida pelo botão no cabeçalho. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E8ECF1; --ink:#14202B; --muted:#596775; --line:#D2D9E1;
+  --piv:#B86E00; --zero:#12805A; --op:#2F55C8; --sub:#AD2F78; --bad:#C3352B;
+  --f-display:"Syne","Arial Black",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440;
+    --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#161D25; --sunk:#0B1015; --ink:#E4EAF0; --muted:#93A1AF; --line:#2A3440;
+  --piv:#F0A63A; --zero:#3FCB93; --op:#7D9BFF; --sub:#F07AC0; --bad:#FF7A6E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+:focus-visible{outline:2px solid var(--op);outline-offset:2px}
+.k-piv{color:var(--piv);font-weight:600} .k-zero{color:var(--zero);font-weight:600} .k-op{color:var(--op);font-weight:600} .k-sub{color:var(--sub);font-weight:600} .k-bad{color:var(--bad);font-weight:600}
+
+/* ---------- Notação ---------- */
+.m{font-family:var(--f-math);font-size:1.2rem;line-height:1.5}
+.m i,i.v{font-family:var(--f-math);font-style:italic}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.78em;line-height:1.08;margin:0 .08em}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .18em}
+.mx{display:inline-flex;align-items:center;gap:8px;vertical-align:middle}
+.mx .nm{font:600 1.25rem var(--f-math)}
+.mxw{position:relative;display:inline-block;padding:0 9px}
+.mxw::before,.mxw::after{content:"";position:absolute;top:0;bottom:0;width:8px;border:2px solid currentColor}
+.mxw::before{left:0;border-right:0;border-radius:6px 0 0 6px}
+.mxw::after{right:0;border-left:0;border-radius:0 6px 6px 0}
+.mt{border-collapse:separate;border-spacing:2px;font-family:var(--f-math);font-size:1.12rem}
+.mt td{min-width:44px;height:38px;text-align:center;padding:2px 6px;border-radius:7px;font-variant-numeric:tabular-nums;transition:background .25s,box-shadow .25s,color .25s}
+.mt td.e{color:transparent}
+.mt td.hlr{background:color-mix(in srgb,var(--op) 16%,transparent)}
+.mt td.hlc{background:color-mix(in srgb,var(--sub) 16%,transparent)}
+.mt td.hlx{box-shadow:inset 0 0 0 2px var(--piv);color:var(--piv);font-weight:600}
+.mt td.dp{background:color-mix(in srgb,var(--zero) 18%,transparent)}
+.mt td.ds{background:color-mix(in srgb,var(--sub) 16%,transparent)}
+.mt td.new{animation:pop .55s cubic-bezier(.3,1.5,.5,1) both;animation-delay:var(--d,0ms)}
+.mt td.pending{opacity:0}
+.mt td .cx{display:block;font-size:.62em;color:var(--muted);line-height:1.1;white-space:nowrap}
+.ord{font:600 .78rem var(--f-mono);color:var(--muted);align-self:flex-end}
+@keyframes pop{from{opacity:0;transform:scale(.4)}}
+.ghost{position:absolute;z-index:20;display:flex;align-items:center;justify-content:center;font-family:var(--f-math);font-size:1.12rem;background:var(--piv);color:#fff;border-radius:7px;pointer-events:none;box-shadow:0 6px 16px rgb(0 0 0 / .2)}
+
+/* ---------- Cabeçalho ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2.2rem,5.6vw,4.2rem);line-height:.98;letter-spacing:-.02em}
+h1 span{color:var(--op)}
+.lead{font-size:1.08rem;max-width:58ch;margin-top:18px}
+.hero-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;display:grid;gap:10px;justify-items:start}
+.hero-box small{color:var(--muted);font-size:.86rem}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px;align-items:center}
+nav.toc a{font-family:var(--f-mono);font-size:.76rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+nav.toc .sp{flex:1}
+
+/* ---------- Seções colapsáveis ---------- */
+section{padding-block:clamp(28px,4.5vw,50px);border-top:1px solid var(--line)}
+.sec-top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.sec-head{display:grid;gap:8px;max-width:74ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.45rem,3vw,2.15rem);line-height:1.1;letter-spacing:-.01em}
+.sec-head p{color:var(--muted)}
+.collapse{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;white-space:nowrap}
+.collapse:hover{border-color:var(--ink)}
+.collapse .chev{display:inline-block;transition:transform .25s;font-size:.8rem}
+section.closed .collapse .chev{transform:rotate(-90deg)}
+section.closed{padding-block:18px}
+section.closed .sec-head p{display:none}
+.sec-body{margin-top:24px}
+section.closed .sec-body{display:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font:700 1.02rem var(--f-display)}
+.lbl{font-family:var(--f-mono);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hint{font-size:.88rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+
+/* ---------- Controles ---------- */
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.9rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--op);border-color:var(--op)}
+.btn.sm{font-size:.8rem;padding:5px 9px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--sunk)}
+.seg button{font-size:.86rem;font-weight:600;padding:5px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+select,input[type=text]{font:inherit;font-size:.92rem;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+.bad-input{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 10%,var(--surface))!important}
+.msg{font-size:.9rem;padding:8px 12px;border-radius:8px;background:var(--sunk)}
+.msg.ok{background:color-mix(in srgb,var(--zero) 13%,transparent)} .msg.ok b{color:var(--zero)}
+.msg.bad{background:color-mix(in srgb,var(--bad) 11%,transparent)} .msg.bad b{color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font:600 .72rem var(--f-mono);padding:3px 9px;border-radius:999px;border:1.3px solid var(--line);color:var(--muted)}
+.chip.on{border-color:var(--zero);color:var(--zero)}
+
+/* ---------- Teoria ---------- */
+.theory{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.theory .card p,.theory li{font-size:.94rem}
+.theory ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.gallery div{background:var(--sunk);border-radius:8px;padding:8px 10px;display:grid;gap:4px;justify-items:center;text-align:center;font-size:.82rem}
+.gallery .mt{font-size:.92rem}.gallery .mt td{min-width:24px;height:24px;padding:0 4px}
+
+/* ---------- Bancada ---------- */
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:14px}
+.slot .nmin{width:46px;text-align:center;font:600 1.2rem var(--f-math)}
+.stepper{display:inline-flex;align-items:center;gap:2px;font:600 .9rem var(--f-mono)}
+.stepper button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700}
+.stepper span{min-width:18px;text-align:center}
+.gin{display:grid;gap:4px;overflow-x:auto;padding:4px 0;justify-content:start}
+.gin input{width:56px;text-align:center;font-family:var(--f-math);font-size:1.02rem;padding:5px 3px}
+.gen{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:14px}
+
+/* ---------- Palco ---------- */
+.player{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.pstage{position:relative;min-height:290px;padding:18px;border-radius:10px;background:var(--sunk);overflow-x:auto;display:flex;flex-direction:column;gap:14px;justify-content:center;align-items:center}
+.pstage>*{max-width:100%}
+.prow{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:center}
+.opsym{font:600 1.5rem var(--f-math);color:var(--op)}
+.formula{font-family:var(--f-math);font-size:1.15rem;text-align:center}
+.formula .tm{display:inline-block;animation:ain .45s both;animation-delay:var(--d,0ms)}
+.pnote{font-size:.98rem;padding:10px 12px;border-left:3px solid var(--op);background:color-mix(in srgb,var(--op) 7%,transparent);border-radius:0 8px 8px 0;min-height:3.2em}
+.ptitle{font:700 1.2rem var(--f-display)}
+.pcount{font:600 .76rem var(--f-mono);color:var(--muted)}
+.progress{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--op);transition:width .3s}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:3px;max-height:520px;overflow-y:auto}
+.steps button{width:100%;text-align:left;font-size:.86rem;padding:6px 9px;border-radius:7px;border:1px solid transparent;background:transparent;cursor:pointer;display:grid;grid-template-columns:26px 1fr;gap:6px;color:var(--muted)}
+.steps button:hover{border-color:var(--line)}
+.steps button[aria-current="step"]{background:var(--sunk);color:var(--ink);border-color:var(--line);font-weight:600}
+.steps button.done{color:var(--ink)}
+.steps .n{font:600 .72rem var(--f-mono);padding-top:2px}
+.a{animation:ain .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*140ms)}
+@keyframes ain{from{opacity:0;transform:translateY(10px)}}
+.cond{display:flex;align-items:center;gap:6px;font:600 1.15rem var(--f-math)}
+.cond .d{padding:2px 8px;border-radius:6px}
+.cond .d.ok{background:color-mix(in srgb,var(--zero) 20%,transparent);color:var(--zero)}
+.cond .d.no{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.oprow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* ---------- Explorador ---------- */
+.explore{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.bigm .mt{font-size:1.35rem}
+.bigm .mt td{min-width:56px;height:48px;cursor:default}
+.readout{font-family:var(--f-math);font-size:1.1rem;min-height:1.6em}
+.lawrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center}
+.lawrow input{font-family:var(--f-mono)}
+
+/* ---------- Teste ---------- */
+.quiz{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+.qbox{font-size:1rem;display:grid;gap:12px}
+.qbox input{width:140px;font-family:var(--f-math);font-size:1.05rem;text-align:center}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:1000px){ .player,.explore,.quiz,.gen{grid-template-columns:minmax(0,1fr)} .steps{max-height:none} }
+@media (max-width:720px){ .hero{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body style="margin:0">
+
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Álgebra Linear · Aula 05</div>
+    <h1>Laboratório de <span>Matrizes</span></h1>
+    <p class="lead">Monte suas matrizes ou sorteie novas, explore elementos e diagonais, gere matrizes por lei de formação e assista, passo a passo, à transposta, à soma, à multiplicação por escalar e ao produto de matrizes.</p>
+  </div>
+  <div class="hero-box">
+    <span class="lbl">Uma matriz de ordem 2 × 3</span>
+    <div id="hero-m"></div>
+    <small>2 linhas e 3 colunas. Passe o mouse nos elementos: cada um tem um endereço <i class="v">a<sub>ij</sub></i>.</small>
+    <div class="m" id="hero-read" style="font-size:1rem;min-height:1.5em"></div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Seções">
+    <a href="#teoria">1 · Teoria</a>
+    <a href="#bancada">2 · Bancada</a>
+    <a href="#explorar">3 · Elementos e lei de formação</a>
+    <a href="#operacoes">4 · Operações animadas</a>
+    <a href="#teste">5 · Teste-se</a>
+    <span class="sp"></span>
+    <button class="btn sm" id="all-close" type="button">Recolher todas</button>
+    <button class="btn sm" id="all-open" type="button">Mostrar todas</button>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ================= 1. TEORIA ================= -->
+<section id="teoria" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 1</span><h2>A teoria em seis cartões</h2><p>O essencial da aula, para consulta rápida.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="theory">
+      <div class="card">
+        <h3>Matriz e ordem</h3>
+        <p>Uma matriz é uma tabela de elementos em linhas e colunas. Com <i class="v">m</i> linhas e <i class="v">n</i> colunas, a <b>ordem</b> (ou tipo) é <span class="m"><i>m</i> × <i>n</i></span>, sempre nessa ordem: linhas primeiro.</p>
+        <div class="row" id="th-order"></div>
+      </div>
+      <div class="card">
+        <h3>Elementos e diagonais</h3>
+        <p>O elemento <span class="m"><i>a<sub>ij</sub></i></span> está na linha <i class="v">i</i> e na coluna <i class="v">j</i>. Numa matriz quadrada, a <span class="k-zero">diagonal principal</span> tem os <span class="m"><i>a<sub>ii</sub></i></span>; a <span class="k-sub">secundária</span> vai do canto superior direito ao inferior esquerdo.</p>
+        <div class="row"><div id="th-diag"></div><div class="seg" id="th-diag-seg"><button type="button" data-v="p" aria-pressed="true">principal</button><button type="button" data-v="s" aria-pressed="false">secundária</button></div></div>
+      </div>
+      <div class="card">
+        <h3>Tipos de matriz</h3>
+        <div class="gallery" id="th-gal"></div>
+      </div>
+      <div class="card">
+        <h3>Transposta e simétrica</h3>
+        <p>A transposta <span class="m">A<sup>T</sup></span> troca linhas por colunas: <span class="m">(A<sup>T</sup>)<sub><i>ij</i></sub> = <i>a<sub>ji</sub></i></span>, e a ordem <span class="m"><i>m</i>×<i>n</i></span> vira <span class="m"><i>n</i>×<i>m</i></span>. Uma matriz quadrada igual à sua transposta é <b>simétrica</b>: espelhada na diagonal principal.</p>
+      </div>
+      <div class="card">
+        <h3>Igualdade</h3>
+        <p>Duas matrizes são iguais se têm a mesma ordem e todos os elementos correspondentes iguais. Exemplo do slide 15:</p>
+        <div class="m" id="th-eq"></div>
+        <div class="row"><label class="m" style="font-size:1.05rem"><i>a</i> = <input type="text" id="eq-a" style="width:60px;text-align:center"></label><label class="m" style="font-size:1.05rem"><i>b</i> = <input type="text" id="eq-b" style="width:60px;text-align:center"></label><button class="btn sm" id="eq-check" type="button">Conferir</button></div>
+        <div class="msg" id="eq-msg">Descubra <i class="v">a</i> e <i class="v">b</i>.</div>
+      </div>
+      <div class="card">
+        <h3>Regras das operações</h3>
+        <ul>
+          <li><b>Soma e subtração:</b> só entre matrizes de mesma ordem; opera elemento a elemento.</li>
+          <li><b>Escalar:</b> <span class="m"><i>k</i>A</span> multiplica cada elemento por <i class="v">k</i>.</li>
+          <li><b>Produto:</b> <span class="m">A<sub><i>m</i>×<i>n</i></sub> · B<sub><i>n</i>×<i>p</i></sub> = C<sub><i>m</i>×<i>p</i></sub></span>. O número de colunas de A deve ser igual ao de linhas de B. Cada <span class="m"><i>c<sub>ij</sub></i></span> é o produto da linha <i class="v">i</i> de A pela coluna <i class="v">j</i> de B.</li>
+          <li>Em geral, <span class="m">AB ≠ BA</span>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. BANCADA ================= -->
+<section id="bancada" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 2</span><h2>Bancada: suas três matrizes</h2><p>Estas matrizes alimentam as seções 3 e 4. Mude nome, ordem e elementos, carregue um exemplo da aula ou sorteie matrizes novas.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="row" style="margin-bottom:14px"><label class="lbl" for="b-preset" style="margin:0">Exemplos da aula</label>
+      <select id="b-preset">
+        <option value="">escolha…</option>
+        <option value="s17">Slide 17: adição</option>
+        <option value="s21">Slide 21: multiplicação</option>
+        <option value="s11">Slides 11–13: transpostas e simétrica</option>
+        <option value="s19">Slide 19: multiplicação por escalar</option>
+        <option value="e1">Exercício 1</option>
+        <option value="e3">Exercício 3: A − Bᵀ − C</option>
+        <option value="e4">Exercício 4: AB</option>
+        <option value="e5">Exercício 5: KL − 2K + L</option>
+      </select>
+      <span class="hint" id="b-msg"></span>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div class="gen">
+      <div class="card">
+        <h3>Sorteio de matrizes</h3>
+        <div class="row"><span class="lbl" style="min-width:76px">Para</span><div class="seg" id="g-tgt"><button type="button" data-v="T">as três</button><button type="button" data-v="1">1ª</button><button type="button" data-v="2">2ª</button><button type="button" data-v="3">3ª</button><button type="button" data-v="P">par para produto</button><button type="button" data-v="M">mesma ordem</button></div></div>
+        <div class="row"><span class="lbl" style="min-width:76px">Tipo</span><div class="seg" id="g-type"><button type="button" data-v="q">qualquer</button><button type="button" data-v="k">quadrada</button><button type="button" data-v="s">simétrica</button><button type="button" data-v="d">diagonal</button><button type="button" data-v="i">identidade</button><button type="button" data-v="l">linha</button><button type="button" data-v="c">coluna</button></div></div>
+        <div class="row"><span class="lbl" style="min-width:76px">Ordem</span>
+          <select id="g-m" aria-label="linhas"><option value="r">aleatória</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> ×
+          <select id="g-n" aria-label="colunas"><option value="r">aleatória</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          <span class="hint" id="g-ordhint"></span></div>
+        <div class="row"><span class="lbl" style="min-width:76px">Elementos</span><div class="seg" id="g-r"><button type="button" data-v="a">−5 a 5</button><button type="button" data-v="b">−9 a 9</button><button type="button" data-v="c">−20 a 20</button></div></div>
+        <div class="row"><button class="btn btn-primary" id="g-go" type="button">Sortear</button><span class="lbl" style="margin:0">ou código</span><input type="text" id="g-code" style="width:150px;font-family:var(--f-mono)" spellcheck="false" aria-label="Código"><button class="btn" id="g-load" type="button">Carregar</button></div>
+        <p class="hint" id="g-count"></p>
+      </div>
+      <div class="card">
+        <h3>Regras da bancada</h3>
+        <ul class="hint" style="margin:0;padding-left:1.1em;display:grid;gap:4px">
+          <li>Ordem de 1×1 até 5×5 em cada matriz.</li>
+          <li>Elementos: inteiros, decimais (0,5) ou frações (3/4). Campo inválido fica vermelho e a matriz não é atualizada.</li>
+          <li>Nomes: uma letra maiúscula, diferente para cada matriz (use K e L no exercício 5).</li>
+          <li>Os tipos de cada matriz aparecem em etiquetas: linha, coluna, quadrada, identidade, simétrica…</li>
+          <li>O código do sorteio reproduz exatamente as mesmas matrizes: passe para a turma.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. EXPLORAR ================= -->
+<section id="explorar" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 3</span><h2>Elementos, diagonais e lei de formação</h2><p>Leia elementos pelo endereço, calcule expressões como as do exercício 1 e gere matrizes a partir de uma regra <span class="m" style="font-size:1rem"><i>f</i>(<i>i</i>, <i>j</i>)</span>.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="explore">
+      <div class="card">
+        <div class="row spread"><h3>Explorador de elementos</h3><select id="x-pick" aria-label="Matriz"></select></div>
+        <div class="bigm" id="x-mat"></div>
+        <div class="readout" id="x-read">Passe o mouse ou toque num elemento.</div>
+        <div class="row"><div class="seg" id="x-diag"><button type="button" data-v="0" aria-pressed="true">sem destaque</button><button type="button" data-v="p" aria-pressed="false">diagonal principal</button><button type="button" data-v="s" aria-pressed="false">diagonal secundária</button></div></div>
+        <span class="lbl">Expressão com elementos</span>
+        <div class="row"><input type="text" id="x-expr" value="a11 + a22 - 2*a12 + 3*a21" style="flex:1;font-family:var(--f-mono)" spellcheck="false" aria-label="Expressão"><button class="btn btn-primary" id="x-go" type="button">Calcular</button></div>
+        <div class="msg" id="x-out">Use <code>a11</code>, <code>a23</code>…, números, + − * / ^ e parênteses. Ex.: <code>(a11 + a22)^2</code>.</div>
+      </div>
+      <div class="card">
+        <h3>Lei de formação</h3>
+        <div class="row"><span class="lbl">Ordem</span><select id="lf-m" aria-label="linhas"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select> × <select id="lf-n" aria-label="colunas"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+          <div class="seg" id="lf-mode"><button type="button" data-v="1" aria-pressed="true">uma regra</button><button type="button" data-v="3" aria-pressed="false">por casos</button></div></div>
+        <div class="lawrow" id="lf-one"><span class="m"><i>a<sub>ij</sub></i> =</span><input type="text" id="lf-f" value="3i - j" spellcheck="false" aria-label="fórmula"></div>
+        <div class="lawrow" id="lf-three" hidden>
+          <span class="m">se <i>i</i> &lt; <i>j</i>:</span><input type="text" id="lf-lt" value="i*j" spellcheck="false" aria-label="fórmula para i menor que j">
+          <span class="m">se <i>i</i> = <i>j</i>:</span><input type="text" id="lf-eq" value="i + j" spellcheck="false" aria-label="fórmula para i igual a j">
+          <span class="m">se <i>i</i> &gt; <i>j</i>:</span><input type="text" id="lf-gt" value="i*j" spellcheck="false" aria-label="fórmula para i maior que j">
+        </div>
+        <div class="row"><button class="btn sm" type="button" data-lfp="s9">Slide 9: 3i − j</button><button class="btn sm" type="button" data-lfp="e2">Exercício 2</button><button class="btn sm" type="button" data-lfp="id">Identidade</button></div>
+        <div class="row"><button class="btn btn-primary" id="lf-anim" type="button">Gerar com animação</button><button class="btn" id="lf-fast" type="button">Gerar direto</button></div>
+        <div class="formula" id="lf-calc" style="min-height:1.8em"></div>
+        <div id="lf-mat" style="display:flex;justify-content:center"></div>
+        <div class="row" id="lf-send" hidden><span class="lbl">Copiar para</span></div>
+        <div class="msg" id="lf-msg" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. OPERAÇÕES ================= -->
+<section id="operacoes" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 4</span><h2>Operações animadas, passo a passo</h2><p>Escolha a operação e as matrizes da bancada. Avance com os botões, pelas setas do teclado ou em reprodução automática. A opção "Expressão" calcula contas inteiras como as dos exercícios 3 e 5.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card" style="margin-bottom:18px">
+      <div class="seg" id="o-op">
+        <button type="button" data-v="T">Transposta</button>
+        <button type="button" data-v="+">Adição</button>
+        <button type="button" data-v="-">Subtração</button>
+        <button type="button" data-v="k">Escalar</button>
+        <button type="button" data-v="*">Produto</button>
+        <button type="button" data-v="E">Expressão</button>
+      </div>
+      <div class="row" id="o-args"></div>
+    </div>
+    <div class="player">
+      <div class="card">
+        <div class="row spread"><span class="pcount" id="p-count"></span></div>
+        <h3 class="ptitle" id="p-title"></h3>
+        <div class="progress"><i id="p-prog"></i></div>
+        <div class="pstage" id="p-body" aria-live="polite"></div>
+        <p class="pnote" id="p-note"></p>
+        <div class="row spread">
+          <div class="row">
+            <button class="btn" id="p-first" type="button" aria-label="Primeiro passo">⏮</button>
+            <button class="btn" id="p-prev" type="button">← Anterior</button>
+            <button class="btn btn-primary" id="p-play" type="button">▶ Reproduzir</button>
+            <button class="btn" id="p-next" type="button">Próximo →</button>
+            <button class="btn" id="p-last" type="button" aria-label="Último passo">⏭</button>
+          </div>
+          <div class="row"><label class="lbl" for="p-speed" style="margin:0">Ritmo</label><select id="p-speed"><option value="6000">calmo</option><option value="3800" selected>normal</option><option value="2200">rápido</option></select></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="lbl">Etapas</span>
+        <ol class="steps" id="p-list"></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5. TESTE ================= -->
+<section id="teste" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 5</span><h2>Teste-se</h2><p>Questões sorteadas sobre todos os tópicos da aula. Cada clique em "Nova questão" gera números novos.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="quiz">
+      <div class="card">
+        <div class="row spread"><span class="lbl" id="q-kind"></span><select id="q-topic" aria-label="Tópico"><option value="">todos os tópicos</option></select></div>
+        <div class="qbox" id="q-box"></div>
+        <div class="msg" id="q-msg" aria-live="polite">Responda e clique em "Conferir".</div>
+        <div class="row"><button class="btn btn-primary" id="q-check" type="button">Conferir</button><button class="btn" id="q-new" type="button">Nova questão</button><button class="btn" id="q-show" type="button">Ver resposta</button></div>
+      </div>
+      <div class="card">
+        <span class="lbl">Seu placar nesta visita</span>
+        <p class="m" id="q-score" style="font-size:1.6rem">0 de 0</p>
+        <div id="q-topics" class="hint"></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Laboratório de Matrizes · material de apoio para Álgebra Linear (Aula 05: matrizes). Exemplos e exercícios baseados nos slides da aula. Todas as contas são feitas com frações exatas.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const SUBD = '₀₁₂₃₄₅₆₇₈₉';
+const sub = n => String(n).split('').map(d => SUBD[d]).join('');
+
+/* ================= Frações exatas ================= */
+const gcd = (a, b) => { a = a < 0n ? -a : a; b = b < 0n ? -b : b; while (b) [a, b] = [b, a % b]; return a; };
+class Q {
+  constructor(n, d = 1n){ n = BigInt(n); d = BigInt(d); if (d === 0n) throw new Error('Divisão por zero.'); if (d < 0n){ n = -n; d = -d; } const g = gcd(n, d) || 1n; this.n = n/g; this.d = d/g; }
+  static of(x){ return x instanceof Q ? x : new Q(x); }
+  add(b){ b = Q.of(b); return new Q(this.n*b.d + b.n*this.d, this.d*b.d); }
+  sub(b){ b = Q.of(b); return new Q(this.n*b.d - b.n*this.d, this.d*b.d); }
+  mul(b){ b = Q.of(b); return new Q(this.n*b.n, this.d*b.d); }
+  div(b){ b = Q.of(b); return new Q(this.n*b.d, this.d*b.n); }
+  neg(){ return new Q(-this.n, this.d); }
+  abs(){ return new Q(this.n < 0n ? -this.n : this.n, this.d); }
+  pow(k){ let r = new Q(1), b = this; let e = k < 0 ? -k : k; while (e--) r = r.mul(b); return k < 0 ? new Q(1).div(r) : r; }
+  get z(){ return this.n === 0n; } get one(){ return this.n === 1n && this.d === 1n; }
+  get isInt(){ return this.d === 1n; } get neg_(){ return this.n < 0n; }
+  eq(b){ b = Q.of(b); return this.n === b.n && this.d === b.d; }
+  str(){ const a = this.n < 0n ? -this.n : this.n; return (this.n < 0n ? '−' : '') + a + (this.d === 1n ? '' : '/' + this.d); }
+  plain(){ return this.str().replace('−', '-'); }
+}
+const Q0 = new Q(0), Q1 = new Q(1);
+function parseQ(s){
+  s = String(s).trim().replace(/[−–]/g, '-').replace(/,/g, '.').replace(/\s+/g, '');
+  if (!s) return null;
+  const dec = t => { const m = /^([+-]?)(\d*)(?:\.(\d+))?$/.exec(t); if (!m || (!m[2] && !m[3])) return null; const fr = m[3] || ''; const q = new Q(BigInt((m[2] || '0') + fr), 10n ** BigInt(fr.length)); return m[1] === '-' ? q.neg() : q; };
+  if (s.includes('/')){ const p = s.split('/'); if (p.length !== 2) return null; const x = dec(p[0]), y = dec(p[1]); if (!x || !y || y.z) return null; return x.div(y); }
+  return dec(s);
+}
+function qH(q, o = {}){
+  const neg = q.n < 0n, a = neg ? -q.n : q.n;
+  const core = q.d === 1n ? `${a}` : `<span class="fr"><span>${a}</span><span>${q.d}</span></span>`;
+  const s = (neg ? '−' : '') + core;
+  return o.paren && neg ? `(${s})` : s;
+}
+
+/* ================= Matrizes ================= */
+const mk = (m, n, f) => Array.from({ length:m }, (_, i) => Array.from({ length:n }, (_, j) => f(i, j)));
+const dims = M => [M.length, M[0].length];
+const T = M => mk(M[0].length, M.length, (i, j) => M[j][i]);
+const add = (A, B) => mk(A.length, A[0].length, (i, j) => A[i][j].add(B[i][j]));
+const subM = (A, B) => mk(A.length, A[0].length, (i, j) => A[i][j].sub(B[i][j]));
+const scal = (k, A) => mk(A.length, A[0].length, (i, j) => k.mul(A[i][j]));
+const prod = (A, B) => mk(A.length, B[0].length, (i, j) => A[i].reduce((s, a, k) => s.add(a.mul(B[k][j])), Q0));
+const eqM = (A, B) => A.length === B.length && A[0].length === B[0].length && A.every((r, i) => r.every((v, j) => v.eq(B[i][j])));
+const ordH = M => `${M.length}×${M[0].length}`;
+function classify(M){
+  const [m, n] = dims(M), out = [];
+  if (m === 1 && n === 1) out.push('unitária');
+  if (m === 1 && n > 1) out.push('linha');
+  if (n === 1 && m > 1) out.push('coluna');
+  if (m === n) out.push('quadrada'); else out.push('retangular');
+  if (M.every(r => r.every(v => v.z))) out.push('nula');
+  if (m === n && m > 1){
+    const isDiag = M.every((r, i) => r.every((v, j) => i === j || v.z));
+    const isId = isDiag && M.every((r, i) => r[i].one);
+    if (isId) out.push('identidade'); else if (isDiag) out.push('diagonal');
+    if (eqM(M, T(M))) out.push('simétrica');
+  }
+  return out;
+}
+// desenho de matriz: o.name, o.cls(i,j), o.id prefixo, o.cx(i,j) texto pequeno, o.hide(i,j), o.order
+function mH(M, o = {}){
+  const [m, n] = dims(M);
+  let h = `<span class="mx">${o.name ? `<span class="nm">${o.name} =</span>` : ''}<span class="mxw"><table class="mt" ${o.id ? `data-m="${o.id}"` : ''}>`;
+  for (let i = 0; i < m; i++){
+    h += '<tr>';
+    for (let j = 0; j < n; j++){
+      const c = o.cls ? o.cls(i, j) || '' : '', hide = o.hide && o.hide(i, j);
+      const cx = o.cx ? o.cx(i, j) : '';
+      h += `<td class="${c}${hide ? ' pending' : ''}" data-r="${i}" data-c="${j}" style="--d:${o.delay ? o.delay(i, j) : 0}ms">${M[i][j] === null ? '' : `${cx ? `<span class="cx">${cx}</span>` : ''}${qH(M[i][j])}`}</td>`;
+    }
+    h += '</tr>';
+  }
+  return h + `</table></span>${o.order !== false ? `<span class="ord">${m}×${n}</span>` : ''}</span>`;
+}
+const blank = (m, n) => mk(m, n, () => null);
+
+/* ================= Aritmética para leis e expressões ================= */
+function tokenize(src, allowA){
+  const s = src.replace(/[×·]/g, '*').replace(/[−–]/g, '-').replace(/,/g, '.');
+  const re = allowA ? /\s*(\d+(?:\.\d+)?|a_?\d\d|[ij]|[()+\-*/^])/y : /\s*(\d+(?:\.\d+)?|[ij]|[()+\-*/^])/y;
+  const out = []; let pos = 0;
+  while (pos < s.length){
+    if (/^\s*$/.test(s.slice(pos))) break;
+    re.lastIndex = pos; const m = re.exec(s);
+    if (!m) throw new Error(`Não entendi "${esc(s.slice(pos).trim().slice(0, 8))}". Use números, ${allowA ? 'a11, a12…' : 'i, j'}, + − * / ^ e parênteses.`);
+    out.push(m[1]); pos = re.lastIndex;
+  }
+  if (!out.length) throw new Error('Expressão vazia.');
+  return out;
+}
+function parseArith(src, allowA){
+  const tk = tokenize(src, allowA); let p = 0;
+  const peek = () => tk[p], eat = t => { if (tk[p] !== t) throw new Error(`Esperava "${t}".`); p++; };
+  const isAtomStart = t => t !== undefined && (/^\d/.test(t) || /^a/.test(t) || t === 'i' || t === 'j' || t === '(');
+  function expr(){ let n = term(); while (peek() === '+' || peek() === '-'){ const op = tk[p++]; n = { op, a:n, b:term() }; } return n; }
+  function term(){ let n = unary(); for (;;){ if (peek() === '*' || peek() === '/'){ const op = tk[p++]; n = { op, a:n, b:unary() }; } else if (isAtomStart(peek())) n = { op:'*', a:n, b:unary(), imp:true }; else break; } return n; }
+  function unary(){ if (peek() === '-'){ p++; return { op:'neg', a:unary() }; } if (peek() === '+'){ p++; return unary(); } return power(); }
+  function power(){ const b = atom(); if (peek() === '^'){ p++; return { op:'^', a:b, b:unary() }; } return b; }
+  function atom(){
+    const t = tk[p++];
+    if (t === undefined) throw new Error('A expressão terminou antes do esperado.');
+    if (t === '('){ const e = expr(); eat(')'); return { op:'()', a:e }; }
+    if (/^\d/.test(t)) return { op:'num', v:parseQ(t) };
+    if (t === 'i' || t === 'j') return { op:'var', v:t };
+    if (/^a/.test(t)){ const d = t.replace(/\D/g, ''); return { op:'el', i:+d[0], j:+d[1] }; }
+    throw new Error(`"${esc(t)}" fora de lugar.`);
+  }
+  const ast = expr(); if (p < tk.length) throw new Error(`Sobrou "${esc(tk.slice(p).join(''))}" no fim.`);
+  return ast;
+}
+function evalA(n, env){
+  switch (n.op){
+    case 'num': return n.v;
+    case 'var': return new Q(env[n.v]);
+    case 'el': { const M = env.M; if (!M[n.i - 1] || !M[n.i - 1][n.j - 1]) throw new Error(`a${n.i}${n.j} não existe nesta matriz de ordem ${ordH(M)}.`); return M[n.i - 1][n.j - 1]; }
+    case '()': return evalA(n.a, env);
+    case 'neg': return evalA(n.a, env).neg();
+    case '+': return evalA(n.a, env).add(evalA(n.b, env));
+    case '-': return evalA(n.a, env).sub(evalA(n.b, env));
+    case '*': return evalA(n.a, env).mul(evalA(n.b, env));
+    case '/': { const d = evalA(n.b, env); if (d.z) throw new Error('Divisão por zero.'); return evalA(n.a, env).div(d); }
+    case '^': { const e = evalA(n.b, env); if (!e.isInt || e.abs().n > 12n) throw new Error('Use expoentes inteiros pequenos.'); return evalA(n.a, env).pow(Number(e.n)); }
+  }
+}
+// escreve a expressão com valores substituídos
+function showA(n, env, top = true){
+  const wrapNeg = q => q.neg_ ? `(${qH(q)})` : qH(q);
+  switch (n.op){
+    case 'num': return qH(n.v);
+    case 'var': return String(env[n.v]);
+    case 'el': return env.M ? `<span class="tm" style="--d:${(env.k = (env.k || 0) + 1)*120}ms">${wrapNeg(evalA(n, env))}</span>` : `<i>a</i><sub>${n.i}${n.j}</sub>`;
+    case '()': return `(${showA(n.a, env, false)})`;
+    case 'neg': return `−${showA(n.a, env, false)}`;
+    case '^': return `${showA(n.a, env, false)}<sup>${showA(n.b, env, false)}</sup>`;
+    case '*': return `${showA(n.a, env, false)}·${showA(n.b, env, false)}`;
+    default: return `${showA(n.a, env, false)} ${n.op === '-' ? '−' : n.op === '/' ? '÷' : '+'} ${showA(n.b, env, false)}`;
+  }
+}
+const showSym = n => showA(n, {}, true);
+
+/* ================= Gerador reproduzível ================= */
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hashStr(s){ let h = 2166136261; for (const ch of s){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const B32 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newSeed = () => Array.from({ length:6 }, () => B32[Math.floor(Math.random()*B32.length)]).join('');
+const RANGE = { a:5, b:9, c:20 };
+const encode = o => `${o.tgt}${o.type}${o.m}${o.n}${o.r}-${o.seed}`;
+function decode(c){
+  const m = /^([T123PM])([qksdilc])([1-5r])([1-5r])([abc])-([A-Z0-9]{3,12})$/.exec(String(c).trim());
+  return m ? { tgt:m[1], type:m[2], m:m[3], n:m[4], r:m[5], seed:m[6] } : null;
+}
+function genMatrix(rnd, type, mm, nn, R){
+  const ri = (lo, hi) => lo + Math.floor(rnd()*(hi - lo + 1));
+  let m = mm === 'r' ? ri(1, 4) : +mm, n = nn === 'r' ? ri(1, 4) : +nn;
+  if (type === 'l'){ m = 1; if (n < 2) n = nn === 'r' ? ri(2, 5) : Math.max(2, n); }
+  if (type === 'c'){ n = 1; if (m < 2) m = mm === 'r' ? ri(2, 5) : Math.max(2, m); }
+  if ('ksdi'.includes(type)){ const s = mm !== 'r' ? +mm : nn !== 'r' ? +nn : ri(2, 4); m = n = Math.max(type === 'k' ? 1 : 2, s); }
+  const v = () => new Q(ri(-R, R));
+  if (type === 'i') return mk(m, n, (i, j) => i === j ? Q1 : Q0);
+  if (type === 'd') return mk(m, n, (i, j) => i === j ? new Q(ri(1, R)*(rnd() < .3 ? -1 : 1)) : Q0);
+  if (type === 's'){ const M = mk(m, n, () => null); for (let i = 0; i < m; i++) for (let j = i; j < n; j++){ M[i][j] = v(); M[j][i] = M[i][j]; } return M; }
+  return mk(m, n, v);
+}
+function generate(o){
+  const rnd = mulberry32(hashStr(encode(o))), R = RANGE[o.r], ri = (lo, hi) => lo + Math.floor(rnd()*(hi - lo + 1));
+  if (o.tgt === 'P'){
+    const m = o.m === 'r' ? ri(1, 4) : +o.m, n = o.n === 'r' ? ri(1, 4) : +o.n, p = ri(1, 4);
+    return { 0:genMatrix(rnd, 'q', String(m), String(n), R), 1:genMatrix(rnd, 'q', String(n), String(p), R) };
+  }
+  if (o.tgt === 'M'){
+    const m = o.m === 'r' ? ri(1, 4) : +o.m, n = o.n === 'r' ? ri(1, 4) : +o.n;
+    return { 0:genMatrix(rnd, o.type, String(m), String(n), R), 1:genMatrix(rnd, o.type, String(m), String(n), R), 2:genMatrix(rnd, o.type, String(m), String(n), R) };
+  }
+  if (o.tgt === 'T') return { 0:genMatrix(rnd, o.type, o.m, o.n, R), 1:genMatrix(rnd, o.type, o.m, o.n, R), 2:genMatrix(rnd, o.type, o.m, o.n, R) };
+  return { [+o.tgt - 1]:genMatrix(rnd, o.type, o.m, o.n, R) };
+}
+
+/* ================= Seções colapsáveis ================= */
+const SKEY = 'lab-matrizes-secoes';
+let closedSet = new Set(); try { closedSet = new Set(JSON.parse(localStorage.getItem(SKEY) || '[]')); } catch (_) {}
+function setSec(sec, open){
+  sec.classList.toggle('closed', !open);
+  const b = sec.querySelector('.collapse'); b.setAttribute('aria-expanded', String(open)); b.querySelector('.ct').textContent = open ? 'Esconder seção' : 'Mostrar seção';
+  if (open) closedSet.delete(sec.id); else closedSet.add(sec.id);
+  try { localStorage.setItem(SKEY, JSON.stringify([...closedSet])); } catch (_) {}
+}
+$$('[data-sec]').forEach(sec => {
+  sec.querySelector('.collapse').addEventListener('click', () => setSec(sec, sec.classList.contains('closed')));
+  if (closedSet.has(sec.id)) setSec(sec, false);
+});
+$('#all-close').addEventListener('click', () => $$('[data-sec]').forEach(s => setSec(s, false)));
+$('#all-open').addEventListener('click', () => $$('[data-sec]').forEach(s => setSec(s, true)));
+$$('nav.toc a').forEach(a => a.addEventListener('click', () => { const s = document.querySelector(a.getAttribute('href')); if (s && s.classList.contains('closed')) setSec(s, true); }));
+
+/* ================= Seção 1: teoria ================= */
+const QM = rows => rows.map(r => r.map(v => new Q(v)));
+{
+  const H = QM([[2, 1, 3], [0, -5, 7]]);
+  $('#hero-m').innerHTML = mH(H, { name:'A', id:'hero' });
+  $('#hero-m').addEventListener('mouseover', e => { const td = e.target.closest('td'); if (!td) return; const i = +td.dataset.r + 1, j = +td.dataset.c + 1; $('#hero-read').innerHTML = `<i>a</i><sub>${i}${j}</sub> = ${qH(H[i - 1][j - 1])} &nbsp;<span class="hint" style="font-family:var(--f-body)">(linha ${i}, coluna ${j})</span>`; });
+  $('#th-order').innerHTML = mH(QM([[3, 1], [0, -4]]), { name:'A' }) + mH(QM([[3, 0], [2, -1], [7, 5]]), { name:'B' });
+  const D = mk(3, 3, (i, j) => null);
+  const dg = mode => { $('#th-diag').innerHTML = `<span class="mx"><span class="mxw"><table class="mt">${[0, 1, 2].map(i => `<tr>${[0, 1, 2].map(j => `<td class="${mode === 'p' && i === j ? 'dp' : mode === 's' && i + j === 2 ? 'ds' : ''}"><i>a</i><sub>${i + 1}${j + 1}</sub></td>`).join('')}</tr>`).join('')}</table></span></span>`; };
+  dg('p'); void D;
+  $('#th-diag-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('#th-diag-seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); dg(b.dataset.v); });
+  const G = [['Unitária (1×1)', [[3]]], ['Linha', [[0, 5, 7]]], ['Coluna', [[3], [2]]], ['Retangular', [[3, 5, 1], [2, 6, 9]]], ['Quadrada', [[3, 5], [2, 6]]], ['Identidade', [[1, 0], [0, 1]]], ['Simétrica', [[3, 1], [1, 4]]], ['Diagonal', [[2, 0], [0, -1]]]];
+  $('#th-gal').innerHTML = G.map(([t, M]) => `<div>${mH(QM(M), { order:false })}<b>${t}</b></div>`).join('');
+  $('#th-eq').innerHTML = `<span class="mx"><span class="mxw"><table class="mt"><tr><td>2</td><td>1</td><td><i>a</i></td></tr><tr><td>3</td><td><i>b</i> + 2</td><td>4</td></tr></table></span></span> = ${mH(QM([[2, 1, 5], [3, 7, 4]]), { order:false })}`;
+  $('#eq-check').addEventListener('click', () => {
+    const a = parseQ($('#eq-a').value), b = parseQ($('#eq-b').value), m = $('#eq-msg');
+    if (!a || !b){ m.className = 'msg bad'; m.innerHTML = '<b>Preencha os dois valores.</b>'; return; }
+    const ok = a.eq(5) && b.eq(5);
+    m.className = 'msg ' + (ok ? 'ok' : 'bad');
+    m.innerHTML = ok ? '<b>Correto!</b> <i class="v">a</i> = 5 e <i class="v">b</i> + 2 = 7, logo <i class="v">b</i> = 5.' : `<b>Ainda não.</b> Compare elemento a elemento: <i class="v">a</i> ocupa a posição de 5, e <i class="v">b</i> + 2 a posição de 7.`;
+  });
+}
+
+/* ================= Seção 2: bancada ================= */
+const slots = [
+  { name:'A', M:QM([[2, 3, 1], [0, 1, 2]]) },
+  { name:'B', M:QM([[2, 0], [1, -1], [3, 5]]) },
+  { name:'C', M:QM([[1, 0], [6, 1]]) },
+];
+const PRESETS = {
+  s17:{ m:[['A', [[0, 3], [2, -1]]], ['B', [[1, 2], [3, 4]]], ['C', [[1, 0], [0, 1]]]], op:'+', a:0, b:1 },
+  s21:{ m:[['A', [[2, 3, 1], [0, 1, 2]]], ['B', [[2, 0], [1, -1], [3, 5]]], ['C', [[1, 0], [6, 1]]]], op:'*', a:0, b:1 },
+  s11:{ m:[['A', [[2, 1, 3], [0, -5, 7]]], ['B', [[7, 8], [1, 2], [4, 5]]], ['C', [[3, 1, 2], [1, 4, 3], [2, 3, 5]]]], op:'T', a:0 },
+  s19:{ m:[['A', [[2, 1], [0, -3], [5, 0]]], ['B', [[1, 2], [3, 4]]], ['C', [[1, 0], [0, 1]]]], op:'k', a:0, k:'3' },
+  e1:{ m:[['A', [[1, 0], [-3, 5]]], ['B', [[1, 2], [3, 4]]], ['C', [[1, 0], [0, 1]]]], op:'T', a:0, x:'a11 + a22 - 2*a12 + 3*a21' },
+  e3:{ m:[['A', [[2, 1], [-3, 4]]], ['B', [[0, -1], [2, 5]]], ['C', [[1, 0], [6, 1]]]], op:'E', expr:'A - B^T - C' },
+  e4:{ m:[['A', [[2, 1], [0, 3]]], ['B', [[0, 1, 2], [4, 5, 6]]], ['C', [[1, 0], [0, 1]]]], op:'*', a:0, b:1 },
+  e5:{ m:[['K', [[6, -1], [0, 3]]], ['L', [[1, -1], [2, 0]]], ['C', [[1, 0], [0, 1]]]], op:'E', expr:'KL - 2K + L' },
+};
+function slotHTML(s, idx){
+  const [m, n] = dims(s.M);
+  return `<div class="card slot" data-s="${idx}">
+    <div class="row spread"><div class="row"><span class="lbl">Nome</span><input type="text" class="nmin" maxlength="1" value="${s.name}" aria-label="Nome da matriz ${idx + 1}"></div>
+    <div class="row"><span class="stepper" aria-label="linhas"><button type="button" data-d="m-" aria-label="menos linhas">−</button><span>${m}</span><button type="button" data-d="m+" aria-label="mais linhas">+</button></span><span>×</span><span class="stepper" aria-label="colunas"><button type="button" data-d="n-" aria-label="menos colunas">−</button><span>${n}</span><button type="button" data-d="n+" aria-label="mais colunas">+</button></span></div></div>
+    <div class="gin" style="grid-template-columns:repeat(${n}, auto)">${s.M.map((r, i) => r.map((v, j) => `<input type="text" inputmode="decimal" data-i="${i}" data-j="${j}" value="${esc(v.plain())}" aria-label="${s.name} linha ${i + 1} coluna ${j + 1}">`).join('')).join('')}</div>
+    <div class="chips">${classify(s.M).map(c => `<span class="chip on">${c}</span>`).join('')}${m === n ? `<span class="chip">diag. principal: ${qH(s.M.reduce((a, r, i) => a.add(r[i]), Q0))}</span>` : ''}</div>
+    <div class="row"><button class="btn sm" type="button" data-act="zero">Zerar</button>${m === n ? '<button class="btn sm" type="button" data-act="id">Identidade</button>' : ''}<button class="btn sm" type="button" data-act="T">Trocar pela transposta</button></div>
+  </div>`;
+}
+function renderSlots(){ $('#slots').innerHTML = slots.map(slotHTML).join(''); }
+function slotChanged(){ renderXPick(); renderXMat(); renderArgs(); buildPlayer(); }
+$('#slots').addEventListener('click', e => {
+  const card = e.target.closest('.slot'); if (!card) return; const s = slots[+card.dataset.s];
+  const d = e.target.closest('[data-d]'), act = e.target.closest('[data-act]');
+  if (d){
+    let [m, n] = dims(s.M);
+    if (d.dataset.d === 'm+') m = Math.min(5, m + 1); if (d.dataset.d === 'm-') m = Math.max(1, m - 1);
+    if (d.dataset.d === 'n+') n = Math.min(5, n + 1); if (d.dataset.d === 'n-') n = Math.max(1, n - 1);
+    s.M = mk(m, n, (i, j) => (s.M[i] && s.M[i][j]) || Q0);
+  } else if (act){
+    const [m, n] = dims(s.M);
+    if (act.dataset.act === 'zero') s.M = mk(m, n, () => Q0);
+    if (act.dataset.act === 'id') s.M = mk(m, n, (i, j) => i === j ? Q1 : Q0);
+    if (act.dataset.act === 'T') s.M = T(s.M);
+  } else return;
+  renderSlots(); slotChanged();
+});
+let slotT = null;
+$('#slots').addEventListener('input', e => {
+  const card = e.target.closest('.slot'); if (!card) return; const idx = +card.dataset.s, s = slots[idx];
+  if (e.target.classList.contains('nmin')){
+    const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    const taken = slots.some((o, k) => k !== idx && o.name === v);
+    e.target.classList.toggle('bad-input', !v || taken);
+    $('#b-msg').textContent = !v ? 'O nome precisa ser uma letra.' : taken ? `O nome ${v} já está em uso.` : '';
+    if (v && !taken){ s.name = v; clearTimeout(slotT); slotT = setTimeout(slotChanged, 300); }
+    return;
+  }
+  const inp = e.target, q = parseQ(inp.value);
+  inp.classList.toggle('bad-input', !q);
+  if (!q) return;
+  s.M[+inp.dataset.i][+inp.dataset.j] = q;
+  clearTimeout(slotT);
+  slotT = setTimeout(() => { const chips = card.querySelector('.chips'); const [m, n] = dims(s.M); chips.innerHTML = classify(s.M).map(c => `<span class="chip on">${c}</span>`).join('') + (m === n ? `<span class="chip">diag. principal: ${qH(s.M.reduce((a, r, i) => a.add(r[i]), Q0))}</span>` : ''); slotChanged(); }, 350);
+});
+function loadPreset(k){
+  const P = PRESETS[k];
+  P.m.forEach(([name, M], i) => { slots[i].name = name; slots[i].M = QM(M); });
+  renderSlots();
+  if (P.x){ $('#x-expr').value = P.x; }
+  opState = { op:P.op, a:P.a ?? 0, b:P.b ?? 1, k:P.k || '2', expr:P.expr || opState.expr };
+  slotChanged();
+  if (P.x){ $('#x-pick').value = '0'; renderXMat(); calcExpr(); }
+  $('#b-msg').textContent = 'Exemplo carregado. A seção 4 já está pronta para ele.';
+}
+$('#b-preset').addEventListener('change', e => { const k = e.target.value; e.target.value = ''; if (k) loadPreset(k); });
+// gerador
+let gOpt = { tgt:'T', type:'q', m:'r', n:'r', r:'b', seed:'' };
+const setPressed = (sel, v) => $$(sel + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v))));
+function syncGen(){
+  setPressed('#g-tgt', gOpt.tgt); setPressed('#g-type', gOpt.type); setPressed('#g-r', gOpt.r);
+  $('#g-m').value = gOpt.m; $('#g-n').value = gOpt.n;
+  const sq = 'ksdi'.includes(gOpt.type);
+  $('#g-ordhint').textContent = gOpt.tgt === 'P' ? 'A 2ª terá tantas linhas quanto a 1ª tem colunas.' : sq ? 'Quadrada: vale o primeiro número informado.' : gOpt.type === 'l' ? 'Linha: sempre 1 linha.' : gOpt.type === 'c' ? 'Coluna: sempre 1 coluna.' : '';
+  const R = RANGE[gOpt.r], cells = (gOpt.m === 'r' ? 4 : +gOpt.m)*(gOpt.n === 'r' ? 4 : +gOpt.n);
+  const e = Math.floor(Math.log10(2*R + 1)*cells*(gOpt.tgt === 'T' || gOpt.tgt === 'M' ? 3 : gOpt.tgt === 'P' ? 2 : 1));
+  $('#g-count').textContent = `Só nos elementos, há da ordem de 10${String(e).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('')} combinações possíveis com estas opções.`;
+}
+[['#g-tgt', 'tgt'], ['#g-type', 'type'], ['#g-r', 'r']].forEach(([sel, k]) => $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; gOpt[k] = b.dataset.v; if (k === 'tgt' && b.dataset.v === 'P') gOpt.type = 'q'; syncGen(); }));
+$('#g-m').addEventListener('change', e => { gOpt.m = e.target.value; syncGen(); });
+$('#g-n').addEventListener('change', e => { gOpt.n = e.target.value; syncGen(); });
+function applyGen(o){
+  const out = generate(o);
+  Object.entries(out).forEach(([i, M]) => { slots[+i].M = M; });
+  renderSlots(); slotChanged();
+  $('#g-code').value = encode(o); $('#b-msg').textContent = `Sorteado. Código ${encode(o)}.`;
+}
+$('#g-go').addEventListener('click', () => { gOpt.seed = newSeed(); applyGen(gOpt); });
+$('#g-load').addEventListener('click', () => { const o = decode($('#g-code').value); if (!o){ $('#b-msg').textContent = 'Código inválido. Formato: Tq33b-ABC234.'; return; } gOpt = o; syncGen(); applyGen(o); });
+$('#g-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#g-load').click(); });
+
+/* ================= Seção 3: explorador e lei de formação ================= */
+let xDiag = '0';
+function renderXPick(){ const v = $('#x-pick').value || '0'; $('#x-pick').innerHTML = slots.map((s, i) => `<option value="${i}">${s.name} (${ordH(s.M)})</option>`).join(''); $('#x-pick').value = v; }
+function renderXMat(hl = []){
+  const s = slots[+$('#x-pick').value || 0], M = s.M, [m, n] = dims(M), sq = m === n;
+  $$('#x-diag button').forEach(b => { if (b.dataset.v !== '0') b.disabled = !sq; });
+  if (!sq && xDiag !== '0'){ xDiag = '0'; setPressed('#x-diag', '0'); }
+  $('#x-mat').innerHTML = mH(M, { name:s.name, id:'x', cls:(i, j) => [hl.some(([a, b]) => a === i && b === j) ? 'hlx' : '', xDiag === 'p' && i === j ? 'dp' : '', xDiag === 's' && i + j === n - 1 ? 'ds' : ''].join(' ') });
+  if (xDiag !== '0' && sq){
+    const cells = xDiag === 'p' ? M.map((r, i) => r[i]) : M.map((r, i) => r[n - 1 - i]);
+    const sum = cells.reduce((a, v) => a.add(v), Q0);
+    $('#x-read').innerHTML = `Soma da diagonal ${xDiag === 'p' ? 'principal' : 'secundária'}: ${cells.map(v => qH(v, { paren:true })).join(' + ')} = <b>${qH(sum)}</b>`;
+  }
+}
+$('#x-pick').addEventListener('change', () => renderXMat());
+$('#x-diag').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; xDiag = b.dataset.v; setPressed('#x-diag', xDiag); renderXMat(); if (xDiag === '0') $('#x-read').textContent = 'Passe o mouse ou toque num elemento.'; });
+$('#x-mat').addEventListener('mouseover', e => {
+  const td = e.target.closest('td'); if (!td || xDiag !== '0') return;
+  const s = slots[+$('#x-pick').value || 0], i = +td.dataset.r, j = +td.dataset.c, n = s.M[0].length;
+  const tags = [i === j && s.M.length === n ? 'diagonal principal' : '', i + j === n - 1 && s.M.length === n ? 'diagonal secundária' : ''].filter(Boolean);
+  $('#x-read').innerHTML = `<i>${s.name.toLowerCase()}</i><sub>${i + 1}${j + 1}</sub> = ${qH(s.M[i][j])} &nbsp;<span class="hint" style="font-family:var(--f-body)">linha ${i + 1}, coluna ${j + 1}${tags.length ? ' · ' + tags.join(', ') : ''}</span>`;
+});
+function calcExpr(){
+  const s = slots[+$('#x-pick').value || 0], out = $('#x-out');
+  try {
+    const ast = parseArith($('#x-expr').value, true), env = { M:s.M };
+    const v = evalA(ast, env), used = [];
+    (function walk(n){ if (!n) return; if (n.op === 'el') used.push([n.i - 1, n.j - 1]); walk(n.a); walk(n.b); })(ast);
+    renderXMat(used);
+    out.className = 'msg ok';
+    out.innerHTML = `<div class="formula"><span>${showSym(ast)}</span><br><span>= ${showA(ast, { M:s.M, k:0 })}</span><br><b class="tm" style="--d:${(used.length + 1)*120}ms">= ${qH(v)}</b></div>`;
+  } catch (err){ out.className = 'msg bad'; out.innerHTML = `<b>Não deu para calcular.</b> ${err.message}`; renderXMat(); }
+}
+$('#x-go').addEventListener('click', calcExpr);
+$('#x-expr').addEventListener('keydown', e => { if (e.key === 'Enter') calcExpr(); });
+// lei de formação
+let lfMode = '1', lfResult = null, lfTimer = null;
+$('#lf-mode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; lfMode = b.dataset.v; setPressed('#lf-mode', lfMode); $('#lf-one').hidden = lfMode !== '1'; $('#lf-three').hidden = lfMode !== '3'; });
+$$('[data-lfp]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.lfp;
+  if (k === 's9'){ $('#lf-m').value = '3'; $('#lf-n').value = '2'; lfMode = '1'; $('#lf-f').value = '3i - j'; }
+  if (k === 'e2'){ $('#lf-m').value = '3'; $('#lf-n').value = '3'; lfMode = '3'; $('#lf-lt').value = 'i*j'; $('#lf-eq').value = 'i + j'; $('#lf-gt').value = 'i*j'; }
+  if (k === 'id'){ $('#lf-m').value = '3'; $('#lf-n').value = '3'; lfMode = '3'; $('#lf-lt').value = '0'; $('#lf-eq').value = '1'; $('#lf-gt').value = '0'; }
+  setPressed('#lf-mode', lfMode); $('#lf-one').hidden = lfMode !== '1'; $('#lf-three').hidden = lfMode !== '3';
+}));
+function lfPlan(){
+  const m = +$('#lf-m').value, n = +$('#lf-n').value;
+  const rules = lfMode === '1' ? { all:parseArith($('#lf-f').value, false) } : { lt:parseArith($('#lf-lt').value, false), eq:parseArith($('#lf-eq').value, false), gt:parseArith($('#lf-gt').value, false) };
+  const cells = [];
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++){
+    const r = rules.all || (i < j ? rules.lt : i === j ? rules.eq : rules.gt);
+    cells.push({ i, j, ast:r, v:evalA(r, { i, j }), cond:rules.all ? '' : (i < j ? 'i < j' : i === j ? 'i = j' : 'i > j') });
+  }
+  return { m, n, cells };
+}
+function lfRun(anim){
+  clearTimeout(lfTimer);
+  const msg = $('#lf-msg'); msg.hidden = true;
+  let plan; try { plan = lfPlan(); } catch (err){ msg.hidden = false; msg.className = 'msg bad'; msg.innerHTML = `<b>Regra inválida.</b> ${err.message}`; return; }
+  const M = blank(plan.m, plan.n); lfResult = null; $('#lf-send').hidden = true;
+  const draw = (cur) => { $('#lf-mat').innerHTML = mH(M.map(r => r.map(v => v)), { cls:(i, j) => cur && cur.i - 1 === i && cur.j - 1 === j ? 'hlx new' : '' }); };
+  const line = c => `<i>a</i><sub>${c.i}${c.j}</sub> ${c.cond ? `<span class="hint" style="font-family:var(--f-body)">(${c.cond.replace(/[ij]/g, x => `<i>${x}</i>`)})</span> ` : ''}= ${showA(c.ast, { i:c.i, j:c.j })} = <b>${qH(c.v)}</b>`;
+  const finish = () => {
+    lfResult = mk(plan.m, plan.n, (i, j) => plan.cells[i*plan.n + j].v);
+    $('#lf-mat').innerHTML = mH(lfResult, { name:'A' });
+    $('#lf-send').hidden = false;
+    $('#lf-send').innerHTML = `<span class="lbl">Copiar para</span>${slots.map((s, k) => `<button class="btn sm" type="button" data-to="${k}">${s.name}</button>`).join('')}`;
+  };
+  if (!anim || reduce){ plan.cells.forEach(c => { M[c.i - 1][c.j - 1] = c.v; }); $('#lf-calc').innerHTML = plan.cells.length ? line(plan.cells[plan.cells.length - 1]) : ''; finish(); return; }
+  let k = 0;
+  const stepF = () => {
+    if (k >= plan.cells.length){ finish(); return; }
+    const c = plan.cells[k++]; M[c.i - 1][c.j - 1] = c.v; draw(c); $('#lf-calc').innerHTML = line(c);
+    lfTimer = setTimeout(stepF, plan.cells.length > 12 ? 520 : 900);
+  };
+  stepF();
+}
+$('#lf-anim').addEventListener('click', () => lfRun(true));
+$('#lf-fast').addEventListener('click', () => lfRun(false));
+$('#lf-send').addEventListener('click', e => { const b = e.target.closest('[data-to]'); if (!b || !lfResult) return; slots[+b.dataset.to].M = lfResult.map(r => r.slice()); renderSlots(); slotChanged(); const msg = $('#lf-msg'); msg.hidden = false; msg.className = 'msg ok'; msg.innerHTML = `<b>Copiada para ${slots[+b.dataset.to].name}.</b>`; });
+
+/* ================= Seção 4: operações ================= */
+let opState = { op:'*', a:0, b:1, k:'2', expr:'A - B^T - C' };
+function renderArgs(){
+  setPressed('#o-op', opState.op);
+  const sel = (key, lab) => `<label class="row" style="gap:6px"><span class="lbl" style="margin:0">${lab}</span><select data-k="${key}">${slots.map((s, i) => `<option value="${i}"${opState[key] === i ? ' selected' : ''}>${s.name} (${ordH(s.M)})</option>`).join('')}</select></label>`;
+  let h = '';
+  if (opState.op === 'T') h = sel('a', 'Matriz');
+  else if ('+-*'.includes(opState.op)) h = sel('a', 'Primeira') + `<span class="opsym">${{ '+':'+', '-':'−', '*':'·' }[opState.op]}</span>` + sel('b', 'Segunda');
+  else if (opState.op === 'k') h = `<label class="row" style="gap:6px"><span class="lbl" style="margin:0">Escalar k</span><input type="text" data-k="k" value="${esc(opState.k)}" style="width:70px;text-align:center;font-family:var(--f-math)"></label>` + sel('a', 'Matriz');
+  else h = `<label class="row" style="gap:6px;flex:1"><span class="lbl" style="margin:0">Expressão</span><input type="text" data-k="expr" value="${esc(opState.expr)}" style="flex:1;min-width:200px;font-family:var(--f-mono)" spellcheck="false"></label><button class="btn btn-primary" type="button" id="o-run">Calcular</button><span class="hint" style="flex-basis:100%">Use os nomes da bancada (${slots.map(s => s.name).join(', ')}), números, + −, produto (AB ou A*B), transposta (A^T ou A') e parênteses.</span>`;
+  $('#o-args').innerHTML = h;
+}
+$('#o-op').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; opState.op = b.dataset.v; renderArgs(); buildPlayer(); });
+$('#o-args').addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; opState[k] = k === 'a' || k === 'b' ? +e.target.value : e.target.value; if (k !== 'expr') buildPlayer(); });
+$('#o-args').addEventListener('input', e => { const k = e.target.dataset.k; if (k === 'k' || k === 'expr') opState[k] = e.target.value; if (k === 'k'){ clearTimeout(slotT); slotT = setTimeout(buildPlayer, 400); } });
+$('#o-args').addEventListener('click', e => { if (e.target.id === 'o-run') buildPlayer(); });
+$('#o-args').addEventListener('keydown', e => { if (e.target.dataset.k === 'expr' && e.key === 'Enter') buildPlayer(); });
+
+// animação de "voo": cópias de células saem de uma posição e pousam em outra
+function fly(src, dst, host, delay = 0, dur = 700){
+  if (reduce || !src || !dst) return Promise.resolve();
+  const hr = host.getBoundingClientRect(), a = src.getBoundingClientRect(), b = dst.getBoundingClientRect();
+  const g = document.createElement('div'); g.className = 'ghost'; g.innerHTML = src.innerHTML;
+  Object.assign(g.style, { left:(a.left - hr.left + host.scrollLeft) + 'px', top:(a.top - hr.top + host.scrollTop) + 'px', width:a.width + 'px', height:a.height + 'px', opacity:0 });
+  host.appendChild(g);
+  const an = g.animate([{ opacity:0, transform:'translate(0,0) scale(1)' }, { opacity:1, offset:.12, transform:'translate(0,0) scale(1.08)' }, { opacity:1, transform:`translate(${b.left - a.left}px,${b.top - a.top}px) scale(${b.width/a.width})` }], { duration:dur, delay, easing:'cubic-bezier(.5,0,.2,1)', fill:'forwards' });
+  return an.finished.then(() => g.remove(), () => g.remove());
+}
+const cell = (root, m, i, j) => root.querySelector(`table[data-m="${m}"] td[data-r="${i}"][data-c="${j}"]`);
+const revealAfter = (td, ms) => { if (!td) return; if (reduce){ td.classList.remove('pending'); return; } setTimeout(() => { td.classList.remove('pending'); td.classList.add('new'); }, ms); };
+
+const NM = i => slots[i].name;
+function stepsTranspose(ai){
+  const A = slots[ai].M, N = NM(ai), [m, n] = dims(A), AT = T(A), steps = [];
+  steps.push({ title:'Ordem da transposta', note:`${N} tem ordem ${m}×${n}. A transposta troca linhas por colunas, então ${N}<sup>T</sup> terá ordem ${n}×${m}.`,
+    body:`<div class="prow">${mH(A, { name:N, id:'A' })}<span class="opsym a">→</span><span class="a" style="--i:1">${mH(blank(n, m), { name:`${N}<sup>T</sup>`, id:'T' })}</span></div>` });
+  for (let i = 0; i < m; i++){
+    steps.push({ title:`Linha ${i + 1} vira coluna ${i + 1}`, note:`Os elementos da linha ${i + 1} de ${N} (${A[i].map(v => qH(v)).join(', ')}) vão para a coluna ${i + 1} de ${N}<sup>T</sup>, na mesma ordem: <span class="m" style="font-size:1rem">(${N}<sup>T</sup>)<sub><i>j</i>${i + 1}</sub> = <i>a</i><sub>${i + 1}<i>j</i></sub></span>.`,
+      body:`<div class="prow">${mH(A, { name:N, id:'A', cls:(r) => r === i ? 'hlr' : '' })}<span class="opsym">→</span>${mH(mk(n, m, (r, c) => c <= i ? AT[r][c] : null), { name:`${N}<sup>T</sup>`, id:'T', cls:(r, c) => c === i ? 'hlc' : '', hide:(r, c) => c === i })}</div>`,
+      anim:host => { for (let j = 0; j < n; j++){ fly(cell(host, 'A', i, j), cell(host, 'T', j, i), host, j*160); revealAfter(cell(host, 'T', j, i), j*160 + 700); } } });
+  }
+  const sym = m === n && eqM(A, AT);
+  steps.push({ title:'Transposta pronta', note:`${N}<sup>T</sup> tem ordem ${n}×${m}. ${m === n ? (sym ? `Como ${N} = ${N}<sup>T</sup>, ${N} é <b>simétrica</b>.` : `${N} ≠ ${N}<sup>T</sup>: ${N} não é simétrica.`) : 'Matriz retangular: a transposta tem a ordem invertida.'}`,
+    body:`<div class="prow">${mH(A, { name:N })}<span class="opsym">→</span>${mH(AT, { name:`${N}<sup>T</sup>`, cls:() => 'new', delay:(r, c) => (r + c)*60 })}</div>` });
+  return steps;
+}
+function stepsAddSub(ai, bi, minus){
+  const A = slots[ai].M, B = slots[bi].M, NA = NM(ai), NB = NM(bi), sym = minus ? '−' : '+', steps = [];
+  const same = A.length === B.length && A[0].length === B[0].length;
+  steps.push({ title:'Conferir as ordens', note:same ? `As duas têm ordem ${ordH(A)}: a ${minus ? 'subtração' : 'soma'} é possível, elemento a elemento.` : `${NA} é ${ordH(A)} e ${NB} é ${ordH(B)}. Para somar ou subtrair, as matrizes precisam ter a mesma ordem. Esta operação não existe.`,
+    body:`<div class="prow">${mH(A, { name:NA })}<span class="opsym">${sym}</span>${mH(B, { name:NB })}</div><div class="cond a" style="--i:1"><span class="d ${same ? 'ok' : 'no'}">${ordH(A)}</span>${same ? '=' : '≠'}<span class="d ${same ? 'ok' : 'no'}">${ordH(B)}</span></div>` });
+  if (!same) return steps;
+  const [m, n] = dims(A), C = minus ? subM(A, B) : add(A, B), R = `${NA} ${sym} ${NB}`;
+  const perEl = m*n <= 9;
+  const units = perEl ? mk(m, n, (i, j) => [i, j]).flat() : Array.from({ length:m }, (_, i) => i);
+  units.forEach(u => {
+    const isCell = Array.isArray(u), rowI = isCell ? u[0] : u;
+    const doneCell = (i, j) => isCell ? (i < u[0] || (i === u[0] && j <= u[1])) : i <= rowI;
+    const curCell = (i, j) => isCell ? i === u[0] && j === u[1] : i === rowI;
+    const cx = (i, j) => curCell(i, j) ? `${qH(A[i][j])} ${sym} ${qH(B[i][j], { paren:true })}` : '';
+    steps.push({ title:isCell ? `Elemento (${u[0] + 1}, ${u[1] + 1})` : `Linha ${rowI + 1}`,
+      note:isCell ? `<span class="m" style="font-size:1rem"><i>c</i><sub>${u[0] + 1}${u[1] + 1}</sub> = ${qH(A[u[0]][u[1]])} ${sym} ${qH(B[u[0]][u[1]], { paren:true })} = ${qH(C[u[0]][u[1]])}</span>: os elementos na mesma posição se combinam.` : `Cada elemento da linha ${rowI + 1} de ${NA} ${minus ? 'menos' : 'mais'} o elemento na mesma posição de ${NB}.`,
+      body:`<div class="prow">${mH(A, { name:NA, id:'A', cls:(i, j) => curCell(i, j) ? 'hlr' : '' })}<span class="opsym">${sym}</span>${mH(B, { name:NB, id:'B', cls:(i, j) => curCell(i, j) ? 'hlc' : '' })}<span class="opsym">=</span>${mH(mk(m, n, (i, j) => doneCell(i, j) ? C[i][j] : null), { id:'C', cx, hide:curCell })}</div>`,
+      anim:host => { let k = 0; for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) if (curCell(i, j)){ const d = k++*170; fly(cell(host, 'A', i, j), cell(host, 'C', i, j), host, d); fly(cell(host, 'B', i, j), cell(host, 'C', i, j), host, d + 90); revealAfter(cell(host, 'C', i, j), d + 800); } } });
+  });
+  steps.push({ title:'Resultado', note:`${R} tem a mesma ordem das parcelas: ${ordH(C)}.`, body:`<div class="prow">${mH(A, { name:NA })}<span class="opsym">${sym}</span>${mH(B, { name:NB })}<span class="opsym">=</span>${mH(C, { cls:() => 'new', delay:(i, j) => (i + j)*60 })}</div>` });
+  return steps;
+}
+function stepsScalar(ai, kStr){
+  const A = slots[ai].M, N = NM(ai), k = parseQ(kStr), steps = [];
+  if (!k) return [{ title:'Escalar inválido', note:'Digite um número para k (inteiro, decimal ou fração).', body:'<p class="hint">Sem um número válido, não há o que calcular.</p>' }];
+  const [m, n] = dims(A), C = scal(k, A), kh = qH(k, { paren:true });
+  steps.push({ title:'Multiplicação por escalar', note:`${qH(k)}·${N}: cada elemento de ${N} é multiplicado por ${qH(k)} (distributividade). A ordem continua ${m}×${n}.`, body:`<div class="prow"><span class="opsym">${qH(k)} ·</span>${mH(A, { name:N })}</div>` });
+  for (let i = 0; i < m; i++){
+    steps.push({ title:`Linha ${i + 1}`, note:`${A[i].map(v => `${kh}·${qH(v, { paren:true })} = ${qH(k.mul(v))}`).join('; ')}.`,
+      body:`<div class="prow"><span class="opsym">${qH(k)} ·</span>${mH(A, { name:N, id:'A', cls:r => r === i ? 'hlr' : '' })}<span class="opsym">=</span>${mH(mk(m, n, (r, c) => r <= i ? C[r][c] : null), { id:'C', cx:(r, c) => r === i ? `${kh}·${qH(A[r][c], { paren:true })}` : '', hide:r => r === i })}</div>`,
+      anim:host => { for (let j = 0; j < n; j++){ fly(cell(host, 'A', i, j), cell(host, 'C', i, j), host, j*150); revealAfter(cell(host, 'C', i, j), j*150 + 720); } } });
+  }
+  steps.push({ title:'Resultado', note:`${qH(k)}${N} pronta.`, body:`<div class="prow"><span class="opsym">${qH(k)} ·</span>${mH(A, { name:N })}<span class="opsym">=</span>${mH(C, { cls:() => 'new', delay:(i, j) => (i + j)*60 })}</div>` });
+  return steps;
+}
+function stepsProduct(ai, bi){
+  const A = slots[ai].M, B = slots[bi].M, NA = NM(ai), NB = NM(bi), steps = [];
+  const [m, n] = dims(A), [n2, p] = dims(B), ok = n === n2;
+  steps.push({ title:'Condição do produto', note:ok ? `Colunas de ${NA} (${n}) = linhas de ${NB} (${n2}): o produto existe. O resultado tem as linhas de ${NA} e as colunas de ${NB}: ${m}×${p}.` : `${NA} tem ${n} ${n === 1 ? 'coluna' : 'colunas'} e ${NB} tem ${n2} ${n2 === 1 ? 'linha' : 'linhas'}. Como ${n} ≠ ${n2}, o produto ${NA}${NB} não existe.${m === p ? '' : ''}`,
+    body:`<div class="prow">${mH(A, { name:NA })}<span class="opsym">·</span>${mH(B, { name:NB })}</div><div class="cond a" style="--i:1">${NA}<sub>${m}×<span class="d ${ok ? 'ok' : 'no'}">${n}</span></sub> · ${NB}<sub><span class="d ${ok ? 'ok' : 'no'}">${n2}</span>×${p}</sub>${ok ? ` = C<sub>${m}×${p}</sub>` : ' ✗'}</div>` });
+  if (!ok){
+    if (dims(B)[1] === m) steps.push({ title:'E o contrário?', note:`Repare que ${NB}${NA} existe (${n2}×${p} · ${m}×${n}, com ${p} = ${m}). A ordem dos fatores importa.`, body:`<div class="cond">${NB}<sub>${n2}×<span class="d ok">${p}</span></sub> · ${NA}<sub><span class="d ok">${m}</span>×${n}</sub> = C<sub>${n2}×${n}</sub></div>` });
+    return steps;
+  }
+  const C = prod(A, B);
+  for (let i = 0; i < m; i++) for (let j = 0; j < p; j++){
+    const terms = A[i].map((a, k) => `<span class="tm" style="--d:${k*260 + 200}ms">${qH(a, { paren:k > 0 })}·${qH(B[k][j], { paren:true })}</span>`).join(' + ');
+    const parts = A[i].map((a, k) => a.mul(B[k][j]));
+    const done = (r, c) => r < i || (r === i && c < j);
+    steps.push({ title:`c${sub(i + 1)}${sub(j + 1)}: linha ${i + 1} × coluna ${j + 1}`,
+      note:`Multiplicamos o 1º da linha ${i + 1} de ${NA} pelo 1º da coluna ${j + 1} de ${NB}, o 2º pelo 2º, e assim por diante; depois somamos (produto escalar).`,
+      body:`<div class="prow">${mH(A, { name:NA, id:'A', cls:(r) => r === i ? 'hlr' : '' })}<span class="opsym">·</span>${mH(B, { name:NB, id:'B', cls:(r, c) => c === j ? 'hlc' : '' })}<span class="opsym">=</span>${mH(mk(m, p, (r, c) => done(r, c) || (r === i && c === j) ? C[r][c] : null), { name:`${NA}${NB}`, id:'C', cls:(r, c) => r === i && c === j ? 'hlx' : '', hide:(r, c) => r === i && c === j })}</div>
+        <div class="formula"><i>c</i><sub>${i + 1}${j + 1}</sub> = ${terms}<br><span class="tm" style="--d:${n*260 + 300}ms">= ${parts.map((v, k) => qH(v, { paren:k > 0 })).join(' + ')} = <b>${qH(C[i][j])}</b></span></div>`,
+      anim:host => { for (let k = 0; k < n; k++){ fly(cell(host, 'A', i, k), cell(host, 'C', i, j), host, k*260, 650); fly(cell(host, 'B', k, j), cell(host, 'C', i, j), host, k*260 + 80, 650); } revealAfter(cell(host, 'C', i, j), n*260 + 650); } });
+  }
+  const comm = dims(B)[1] === m ? (eqM(C, prod(B, A)) ? `Curiosidade: aqui ${NB}${NA} dá o mesmo resultado, mas isso é exceção.` : `${NB}${NA} também existe, mas dá outra matriz: em geral, ${NA}${NB} ≠ ${NB}${NA}.`) : `${NB}${NA} nem existe: ${p} ≠ ${m}.`;
+  steps.push({ title:'Resultado', note:`${NA}${NB} tem ordem ${m}×${p}. ${comm}`, body:`<div class="prow">${mH(A, { name:NA })}<span class="opsym">·</span>${mH(B, { name:NB })}<span class="opsym">=</span>${mH(C, { cls:() => 'new', delay:(i, j) => (i + j)*60 })}</div>` });
+  return steps;
+}
+// expressões com matrizes
+function parseMatExpr(src){
+  const names = slots.map(s => s.name);
+  const s = src.replace(/[×·]/g, '*').replace(/[−–]/g, '-').replace(/ᵀ/g, '^T').replace(/,/g, '.');
+  const re = /\s*(\d+(?:\.\d+)?(?:\/\d+)?|[A-Z]|\^T|'|[()+\-*])/y; const tk = []; let pos = 0;
+  while (pos < s.length){ if (/^\s*$/.test(s.slice(pos))) break; re.lastIndex = pos; const m = re.exec(s); if (!m) throw new Error(`Não entendi "${esc(s.slice(pos).trim().slice(0, 6))}".`); tk.push(m[1]); pos = re.lastIndex; }
+  if (!tk.length) throw new Error('Expressão vazia.');
+  let p = 0; const peek = () => tk[p];
+  const startsAtom = t => t !== undefined && (/^\d/.test(t) || /^[A-Z]$/.test(t) || t === '(');
+  function expr(){ let n = term(); while (peek() === '+' || peek() === '-'){ const op = tk[p++]; n = { op, a:n, b:term() }; } return n; }
+  function term(){ let n = unary(); for (;;){ if (peek() === '*'){ p++; n = { op:'*', a:n, b:unary() }; } else if (startsAtom(peek())) n = { op:'*', a:n, b:unary() }; else break; } return n; }
+  function unary(){ if (peek() === '-'){ p++; return { op:'neg', a:unary() }; } return post(); }
+  function post(){ let n = atom(); while (peek() === '^T' || peek() === "'"){ p++; n = { op:'T', a:n }; } return n; }
+  function atom(){
+    const t = tk[p++];
+    if (t === '('){ const e = expr(); if (tk[p++] !== ')') throw new Error('Falta fechar um parêntese.'); return { op:'()', a:e }; }
+    if (t && /^\d/.test(t)) return { op:'num', v:parseQ(t) };
+    if (t && /^[A-Z]$/.test(t)){ const k = names.indexOf(t); if (k < 0) throw new Error(`Não há matriz chamada ${t} na bancada (as matrizes são ${names.join(', ')}).`); return { op:'mat', k }; }
+    throw new Error(t ? `"${esc(t)}" fora de lugar.` : 'A expressão terminou antes do esperado.');
+  }
+  const ast = expr(); if (p < tk.length) throw new Error(`Sobrou "${esc(tk.slice(p).join(' '))}" no fim.`);
+  return ast;
+}
+function label(n){
+  switch (n.op){
+    case 'num': return qH(n.v);
+    case 'mat': return slots[n.k].name;
+    case '()': return `(${label(n.a)})`;
+    case 'T': return `${n.a.op === 'mat' || n.a.op === '()' ? label(n.a) : `(${label(n.a)})`}<sup>T</sup>`;
+    case 'neg': return `−${label(n.a)}`;
+    case '*': return `${label(n.a)}${n.a.op === 'num' && n.b.op !== 'num' ? '' : n.a.op === 'mat' && n.b.op === 'mat' ? '' : '·'}${label(n.b)}`;
+    default: return `${label(n.a)} ${n.op === '-' ? '−' : '+'} ${label(n.b)}`;
+  }
+}
+function stepsExpr(src){
+  let ast; try { ast = parseMatExpr(src); } catch (err){ return [{ title:'Expressão inválida', note:err.message, body:'<p class="hint">Corrija a expressão e clique em "Calcular".</p>' }]; }
+  const steps = []; const show = v => v.s ? qH(v.v) : mH(v.v, { order:true });
+  function ev(n){
+    switch (n.op){
+      case 'num': return { s:true, v:n.v };
+      case 'mat': return { s:false, v:slots[n.k].M };
+      case '()': return ev(n.a);
+      case 'T': { const a = ev(n.a); if (a.s) return a; const r = T(a.v); steps.push({ title:`${label(n)}`, note:`Transposta de ${label(n.a)}: linhas viram colunas (${ordH(a.v)} → ${ordH(r)}).`, body:`<div class="prow">${mH(a.v, { name:label(n.a) })}<span class="opsym">→</span>${mH(r, { name:label(n), cls:() => 'new', delay:(i, j) => (i + j)*70 })}</div>` }); return { s:false, v:r }; }
+      case 'neg': { const a = ev(n.a); if (a.s) return { s:true, v:a.v.neg() }; const r = scal(new Q(-1), a.v); steps.push({ title:`${label(n)}`, note:'Trocamos o sinal de cada elemento (multiplicar por −1).', body:`<div class="prow">${mH(a.v, { name:label(n.a) })}<span class="opsym">→</span>${mH(r, { name:label(n), cls:() => 'new' })}</div>` }); return { s:false, v:r }; }
+      case '*': {
+        const a = ev(n.a), b = ev(n.b);
+        if (a.s && b.s) return { s:true, v:a.v.mul(b.v) };
+        if (a.s || b.s){ const k = a.s ? a.v : b.v, M = a.s ? b.v : a.v, r = scal(k, M);
+          steps.push({ title:`${label(n)}`, note:`Multiplicação por escalar: cada elemento × ${qH(k)}.`, body:`<div class="prow"><span class="opsym">${qH(k)} ·</span>${mH(M, { name:label(a.s ? n.b : n.a) })}<span class="opsym">=</span>${mH(r, { cx:(i, j) => `${qH(k, { paren:true })}·${qH(M[i][j], { paren:true })}`, cls:() => 'new', delay:(i, j) => (i + j)*70 })}</div>` }); return { s:false, v:r }; }
+        const [m, k1] = dims(a.v), [k2, pp] = dims(b.v);
+        if (k1 !== k2){ steps.push({ title:`${label(n)} não existe`, note:`${label(n.a)} tem ${k1} colunas e ${label(n.b)} tem ${k2} linhas. Para multiplicar, esses números precisam ser iguais.`, body:`<div class="cond">${m}×<span class="d no">${k1}</span> · <span class="d no">${k2}</span>×${pp} ✗</div>` }); throw new Error('stop'); }
+        const r = prod(a.v, b.v), small = m*pp <= 9 && k1 <= 3;
+        steps.push({ title:`${label(n)}`, note:`Produto de matrizes: ${m}×${k1} · ${k2}×${pp} = ${m}×${pp}. Cada elemento é linha × coluna${small ? ' (as contas aparecem em cima de cada resultado)' : ''}. Para ver elemento por elemento, use a operação "Produto".`,
+          body:`<div class="prow">${mH(a.v, { name:label(n.a) })}<span class="opsym">·</span>${mH(b.v, { name:label(n.b) })}<span class="opsym">=</span>${mH(r, { cx:small ? (i, j) => a.v[i].map((x, q) => `${qH(x, { paren:q > 0 })}·${qH(b.v[q][j], { paren:true })}`).join('+') : null, cls:() => 'new', delay:(i, j) => (i*pp + j)*110 })}</div>` });
+        return { s:false, v:r };
+      }
+      default: {
+        const a = ev(n.a), b = ev(n.b), sym = n.op === '-' ? '−' : '+';
+        if (a.s && b.s) return { s:true, v:n.op === '-' ? a.v.sub(b.v) : a.v.add(b.v) };
+        if (a.s || b.s){ steps.push({ title:'Operação inválida', note:`Não se soma número com matriz: em "${label(n)}", um lado é número e o outro é matriz.`, body:'<p class="hint">Use, por exemplo, 2A ou A + B.</p>' }); throw new Error('stop'); }
+        if (a.v.length !== b.v.length || a.v[0].length !== b.v[0].length){ steps.push({ title:`${label(n)} não existe`, note:`${label(n.a)} é ${ordH(a.v)} e ${label(n.b)} é ${ordH(b.v)}: só se soma ou subtrai matrizes de mesma ordem.`, body:`<div class="cond"><span class="d no">${ordH(a.v)}</span> ≠ <span class="d no">${ordH(b.v)}</span></div>` }); throw new Error('stop'); }
+        const r = n.op === '-' ? subM(a.v, b.v) : add(a.v, b.v);
+        steps.push({ title:`${label(n)}`, note:`${n.op === '-' ? 'Subtração' : 'Soma'} elemento a elemento.`, body:`<div class="prow">${mH(a.v, { name:label(n.a) })}<span class="opsym">${sym}</span>${mH(b.v, { name:label(n.b) })}<span class="opsym">=</span>${mH(r, { cx:(i, j) => `${qH(a.v[i][j])}${sym}${qH(b.v[i][j], { paren:true })}`, cls:() => 'new', delay:(i, j) => (i + j)*70 })}</div>` });
+        return { s:false, v:r };
+      }
+    }
+  }
+  steps.push({ title:'A expressão', note:'Calculamos de dentro para fora: transpostas, produtos e escalares primeiro; depois somas e subtrações, da esquerda para a direita.', body:`<div class="formula" style="font-size:1.5rem">${label(ast)}</div><div class="prow">${slots.map(s => mH(s.M, { name:s.name })).join('')}</div>` });
+  try {
+    const r = ev(ast);
+    steps.push({ title:'Resultado final', note:`${label(ast)} calculada.`, body:`<div class="prow"><span class="formula" style="font-size:1.4rem">${label(ast)} =</span>${r.s ? `<span class="formula" style="font-size:1.6rem">${qH(r.v)}</span>` : mH(r.v, { cls:() => 'new', delay:(i, j) => (i + j)*70 })}</div>` });
+  } catch (err){ if (err.message !== 'stop') steps.push({ title:'Erro', note:esc(err.message), body:'' }); }
+  return steps;
+}
+
+// player
+let steps = [], cur = 0, playing = false, playT = null;
+function buildPlayer(){
+  stopPlay();
+  const o = opState;
+  if (o.op === 'T') steps = stepsTranspose(o.a);
+  else if (o.op === '+') steps = stepsAddSub(o.a, o.b, false);
+  else if (o.op === '-') steps = stepsAddSub(o.a, o.b, true);
+  else if (o.op === 'k') steps = stepsScalar(o.a, o.k);
+  else if (o.op === '*') steps = stepsProduct(o.a, o.b);
+  else steps = stepsExpr(o.expr);
+  $('#p-list').innerHTML = steps.map((s, i) => `<li><button type="button" data-i="${i}"><span class="n">${String(i + 1).padStart(2, '0')}</span><span>${s.title}</span></button></li>`).join('');
+  show(0);
+}
+function show(i){
+  cur = Math.max(0, Math.min(steps.length - 1, i));
+  const s = steps[cur], NAME = { T:'Transposta', '+':'Adição', '-':'Subtração', k:'Escalar', '*':'Produto', E:'Expressão' }[opState.op];
+  $('#p-count').textContent = `Passo ${cur + 1} de ${steps.length} · ${NAME}`;
+  $('#p-title').innerHTML = s.title;
+  const host = $('#p-body'); host.innerHTML = s.body;
+  $('#p-note').innerHTML = s.note;
+  $('#p-prog').style.width = ((cur + 1)/steps.length*100) + '%';
+  $('#p-prev').disabled = $('#p-first').disabled = cur === 0;
+  $('#p-next').disabled = $('#p-last').disabled = cur === steps.length - 1;
+  $$('#p-list button').forEach((b, k) => { k === cur ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'); b.classList.toggle('done', k < cur); });
+  if (s.anim && !$('#operacoes').classList.contains('closed')) requestAnimationFrame(() => s.anim(host));
+  else host.querySelectorAll('td.pending').forEach(td => td.classList.remove('pending'));
+}
+function stopPlay(){ playing = false; clearTimeout(playT); $('#p-play').textContent = '▶ Reproduzir'; }
+function tick(){ if (!playing) return; if (cur >= steps.length - 1) return stopPlay(); show(cur + 1); playT = setTimeout(tick, +$('#p-speed').value); }
+$('#p-play').addEventListener('click', () => { if (playing) return stopPlay(); playing = true; $('#p-play').textContent = '❚❚ Pausar'; if (cur >= steps.length - 1) show(0); playT = setTimeout(tick, +$('#p-speed').value); });
+$('#p-next').addEventListener('click', () => { stopPlay(); show(cur + 1); });
+$('#p-prev').addEventListener('click', () => { stopPlay(); show(cur - 1); });
+$('#p-first').addEventListener('click', () => { stopPlay(); show(0); });
+$('#p-last').addEventListener('click', () => { stopPlay(); show(steps.length - 1); });
+$('#p-list').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stopPlay(); show(+b.dataset.i); });
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const sec = $('#operacoes'); if (sec.classList.contains('closed')) return;
+  const r = sec.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+  if (e.key === 'ArrowRight'){ stopPlay(); show(cur + 1); } else if (e.key === 'ArrowLeft'){ stopPlay(); show(cur - 1); }
+});
+
+/* ================= Seção 5: teste ================= */
+const RI = (lo, hi) => lo + Math.floor(Math.random()*(hi - lo + 1));
+const rndM = (m, n, R = 9) => mk(m, n, () => new Q(RI(-R, R)));
+const ansOrder = s => { const m = /^\s*(\d+)\s*[x×*]\s*(\d+)\s*$/i.exec(s); return m ? `${+m[1]}x${+m[2]}` : null; };
+const QGEN = {
+  ordem:{ t:'Ordem', g(){ const m = RI(1, 4), n = RI(1, 4), A = rndM(m, n); return { q:`Qual é a ordem da matriz abaixo? Responda no formato <code>m×n</code>.<div>${mH(A, { name:'A', order:false })}</div>`, check:s => ansOrder(s) === `${m}x${n}`, ans:`${m}×${n} (${m} ${m === 1 ? 'linha' : 'linhas'} e ${n} ${n === 1 ? 'coluna' : 'colunas'})` }; } },
+  elem:{ t:'Elemento', g(){ const m = RI(2, 4), n = RI(2, 4), A = rndM(m, n), i = RI(1, m), j = RI(1, n); return { q:`Na matriz abaixo, quanto vale <span class="m"><i>a</i><sub>${i}${j}</sub></span>?<div>${mH(A, { name:'A' })}</div>`, check:s => { const v = parseQ(s); return v && v.eq(A[i - 1][j - 1]); }, ans:`${qH(A[i - 1][j - 1])}: linha ${i}, coluna ${j}.` }; } },
+  lei:{ t:'Lei de formação', g(){ const p = RI(1, 4)*(Math.random() < .3 ? -1 : 1), q = RI(1, 3)*(Math.random() < .5 ? -1 : 1), r = RI(-4, 4), m = RI(2, 4), n = RI(2, 4), i = RI(1, m), j = RI(1, n); const v = p*i + q*j + r; const f = `${p}<i>i</i> ${q < 0 ? '−' : '+'} ${Math.abs(q)}<i>j</i> ${r < 0 ? '−' : '+'} ${Math.abs(r)}`; return { q:`A matriz <span class="m">A = (<i>a<sub>ij</sub></i>)<sub>${m}×${n}</sub></span> tem <span class="m"><i>a<sub>ij</sub></i> = ${f}</span>. Quanto vale <span class="m"><i>a</i><sub>${i}${j}</sub></span>?`, check:s => { const x = parseQ(s); return x && x.eq(v); }, ans:`${p}·${i} ${q < 0 ? '−' : '+'} ${Math.abs(q)}·${j} ${r < 0 ? '−' : '+'} ${Math.abs(r)} = ${v}` }; } },
+  trans:{ t:'Transposta', g(){ const m = RI(2, 3), n = RI(2, 4), A = rndM(m, n), i = RI(1, n), j = RI(1, m); return { q:`Para a matriz abaixo, quanto vale <span class="m">(A<sup>T</sup>)<sub>${i}${j}</sub></span>?<div>${mH(A, { name:'A' })}</div>`, check:s => { const v = parseQ(s); return v && v.eq(A[j - 1][i - 1]); }, ans:`(A<sup>T</sup>)<sub>${i}${j}</sub> = <i>a</i><sub>${j}${i}</sub> = ${qH(A[j - 1][i - 1])}; A<sup>T</sup> tem ordem ${n}×${m}.` }; } },
+  soma:{ t:'Adição e subtração', g(){ const m = RI(2, 3), n = RI(2, 3), A = rndM(m, n), B = rndM(m, n), minus = Math.random() < .5, i = RI(1, m), j = RI(1, n); const v = minus ? A[i - 1][j - 1].sub(B[i - 1][j - 1]) : A[i - 1][j - 1].add(B[i - 1][j - 1]); return { q:`Calcule o elemento <span class="m">(A ${minus ? '−' : '+'} B)<sub>${i}${j}</sub></span>.<div class="prow">${mH(A, { name:'A' })}${mH(B, { name:'B' })}</div>`, check:s => { const x = parseQ(s); return x && x.eq(v); }, ans:`${qH(A[i - 1][j - 1])} ${minus ? '−' : '+'} ${qH(B[i - 1][j - 1], { paren:true })} = ${qH(v)}` }; } },
+  escalar:{ t:'Escalar', g(){ const k = [-3, -2, 2, 3, 4, 5][RI(0, 5)], m = RI(2, 3), n = RI(2, 3), A = rndM(m, n), i = RI(1, m), j = RI(1, n); const v = A[i - 1][j - 1].mul(k); return { q:`Quanto vale o elemento <span class="m">(${k}A)<sub>${i}${j}</sub></span>?<div>${mH(A, { name:'A' })}</div>`, check:s => { const x = parseQ(s); return x && x.eq(v); }, ans:`${k}·${qH(A[i - 1][j - 1], { paren:true })} = ${qH(v)}` }; } },
+  produto:{ t:'Produto', g(){ const m = RI(2, 3), n = RI(2, 3), p = RI(2, 3), A = rndM(m, n, 5), B = rndM(n, p, 5), i = RI(1, m), j = RI(1, p), C = prod(A, B); return { q:`Calcule <span class="m"><i>c</i><sub>${i}${j}</sub></span> de <span class="m">C = AB</span> (linha ${i} de A × coluna ${j} de B).<div class="prow">${mH(A, { name:'A' })}${mH(B, { name:'B' })}</div>`, check:s => { const x = parseQ(s); return x && x.eq(C[i - 1][j - 1]); }, ans:`${A[i - 1].map((a, k) => `${qH(a, { paren:k > 0 })}·${qH(B[k][j - 1], { paren:true })}`).join(' + ')} = ${qH(C[i - 1][j - 1])}` }; } },
+  existe:{ t:'Produto existe?', g(){ const m = RI(1, 4), n = RI(1, 4), p = Math.random() < .55 ? n : RI(1, 4), q = RI(1, 4); const ok = n === p; return { q:`A tem ordem ${m}×${n} e B tem ordem ${p}×${q}. O produto AB existe? Responda <code>não</code> ou a ordem do resultado (ex.: <code>2×3</code>).`, check:s => ok ? ansOrder(s) === `${m}x${q}` : /^\s*n[aã]o\s*$/i.test(s), ans:ok ? `Sim: colunas de A (${n}) = linhas de B (${p}); AB é ${m}×${q}.` : `Não: A tem ${n} colunas e B tem ${p} linhas.` }; } },
+  diag:{ t:'Diagonais', g(){ const n = RI(2, 4), A = rndM(n, n), sec = Math.random() < .4; const cells = sec ? A.map((r, i) => r[n - 1 - i]) : A.map((r, i) => r[i]); const v = cells.reduce((a, x) => a.add(x), Q0); return { q:`Qual é a soma dos elementos da diagonal <b>${sec ? 'secundária' : 'principal'}</b>?<div>${mH(A, { name:'A' })}</div>`, check:s => { const x = parseQ(s); return x && x.eq(v); }, ans:`${cells.map(x => qH(x, { paren:true })).join(' + ')} = ${qH(v)}` }; } },
+  simetrica:{ t:'Simétrica', g(){ const n = RI(2, 3); let A = rndM(n, n, 6); if (Math.random() < .5){ for (let i = 0; i < n; i++) for (let j = 0; j < i; j++) A[i][j] = A[j][i]; } const sym = eqM(A, T(A)); return { q:`A matriz abaixo é simétrica? Responda <code>sim</code> ou <code>não</code>.<div>${mH(A, { name:'A' })}</div>`, check:s => sym ? /^\s*sim\s*$/i.test(s) : /^\s*n[aã]o\s*$/i.test(s), ans:sym ? 'Sim: ela é igual à sua transposta (espelhada na diagonal principal).' : 'Não: há elementos com a<sub>ij</sub> ≠ a<sub>ji</sub>.' }; } },
+};
+const KEYS = Object.keys(QGEN);
+$('#q-topic').innerHTML += KEYS.map(k => `<option value="${k}">${QGEN[k].t}</option>`).join('');
+let Qc = null, qAnswered = false, qR = 0, qN = 0; const perTopic = {};
+function newQ(){
+  const k = $('#q-topic').value || KEYS[RI(0, KEYS.length - 1)];
+  Qc = { k, ...QGEN[k].g() }; qAnswered = false;
+  $('#q-kind').textContent = QGEN[k].t;
+  $('#q-box').innerHTML = `<div>${Qc.q}</div><label class="row"><span class="lbl" style="margin:0">Resposta</span><input type="text" id="q-in" autocomplete="off" spellcheck="false"></label>`;
+  const m = $('#q-msg'); m.className = 'msg'; m.textContent = 'Responda e clique em "Conferir".';
+  $('#q-in').addEventListener('keydown', e => { if (e.key === 'Enter') $('#q-check').click(); });
+}
+function scoreQ(ok){
+  if (qAnswered) return; qAnswered = true; qN++; if (ok) qR++;
+  const t = perTopic[Qc.k] || (perTopic[Qc.k] = [0, 0]); t[1]++; if (ok) t[0]++;
+  $('#q-score').textContent = `${qR} de ${qN}`;
+  $('#q-topics').innerHTML = Object.entries(perTopic).map(([k, [a, b]]) => `${QGEN[k].t}: ${a}/${b}`).join(' · ');
+}
+$('#q-check').addEventListener('click', () => {
+  const v = $('#q-in').value, m = $('#q-msg');
+  if (!v.trim()){ m.className = 'msg bad'; m.innerHTML = '<b>Digite uma resposta.</b>'; return; }
+  const ok = !!Qc.check(v); scoreQ(ok);
+  m.className = 'msg ' + (ok ? 'ok' : 'bad'); m.innerHTML = ok ? `<b>Correto!</b> ${Qc.ans}` : `<b>Ainda não.</b> Tente de novo ou clique em "Ver resposta".`;
+});
+$('#q-show').addEventListener('click', () => { scoreQ(false); const m = $('#q-msg'); m.className = 'msg'; m.innerHTML = `<b>Resposta:</b> ${Qc.ans}`; });
+$('#q-new').addEventListener('click', newQ);
+$('#q-topic').addEventListener('change', newQ);
+
+/* ================= Início ================= */
+renderSlots(); syncGen(); renderXPick(); renderXMat(); renderArgs(); buildPlayer(); newQ();
+})();
+</script>
+</body>
+</html>
